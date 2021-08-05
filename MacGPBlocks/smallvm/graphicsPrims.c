@@ -1,13 +1,13 @@
 // graphicsPrims.c
 // John Maloney, October 2013
 
-#include <cairo/cairo.h>
+#include "cairo/cairo.h"
 #include <dirent.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL.h>
+#include "SDL.h"
 
 #include "mem.h"
 #include "interp.h"
@@ -15,7 +15,8 @@
 // Note: Although SDL2 officially supports textures as large as 8192x8192, I got
 // crashes, long pauses, and other strange behavior with textures larger than about
 // 5000x5000. The conservative limit below appears to be safe, at least on a MacBook Pro.
-#define MAX_TEXTURE_SIZE 2048
+//#define MAX_TEXTURE_SIZE 2048
+#define MAX_TEXTURE_SIZE 8192
 
 static int initialized = false;
 SDL_Window *window = NULL; // used by events.c
@@ -475,8 +476,15 @@ OBJ primDrawBitmap(int nargs, OBJ args[]) {
 				if (dX > MAX_TEXTURE_SIZE) dX = MAX_TEXTURE_SIZE;
 				SDL_Rect textureR = {0, 0, dX, dY};
 				int srcOffset = (srcY * w) + srcX;
+
+                //printf("textureR %d,%d %d,%d\n", textureR.x, textureR.y, textureR.w, textureR.h);
 				SDL_UpdateTexture(tmpTexture, &textureR, &FIELD(bitmapData, srcOffset), (4 * w));
 				SDL_Rect dstR = {dstX, dstY, dX, dY};
+                //printf("dstR  %d,%d %d,%d\n",  dstR.x, dstR.y, dstR.w, dstR.h);
+                dstR.x = dstR.x < 0 ?  0 :dstR.x;
+                dstR.y = dstR.y < 0 ?  0 :dstR.y;
+                //printf(">-dstR  %d,%d %d,%d\n",  dstR.x, dstR.y, dstR.w, dstR.h);
+
 				SDL_RenderCopy(renderer, tmpTexture, &textureR, &dstR);
 				dstX += MAX_TEXTURE_SIZE;
 			}

@@ -19,6 +19,9 @@
   #include <windows.h>
 #endif
 
+
+
+
 /* Variables */
 
 char argv0[1024]; // copy of argv[0]
@@ -198,44 +201,77 @@ static gp_boolean isGPFile(char *s) {
 	return (strcmp(s + (count - 3), ".gp") == 0);
 }
 
-static void readLibraryFromFileSystem(gp_boolean runStartup) {
-	char fName[200];
-	int loadedCount = 0;
-#ifdef _WIN32
-	char entry[200]; // directory entry name
-	WIN32_FIND_DATAW info;
-	HANDLE hFind = FindFirstFileW(L"runtime\\lib\\*.gp", &info);
-	if (INVALID_HANDLE_VALUE != hFind) {
-		do {
-			if ((info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-				entry[0] = 0; // null terminate in case conversion fails
-				WideCharToMultiByte(CP_UTF8, 0, info.cFileName, -1, entry, sizeof(entry), NULL, NULL);
-				if (isGPFile(entry)) {
-					snprintf(fName, 200, "runtime/lib/%s", entry);
-					parse_runFile(fName);
- 					loadedCount++;
- 				}
-			}
-		} while (FindNextFileW(hFind, &info) != 0);
-	}
-	FindClose(hFind);
+// Returns slash ended path on macOS or empty string otherwise
+static int getPathToRuntimeLibrary(char *path, int pathSize){
+#ifdef MAC
+    // Mac app holds the runtime library in XXX.app/Conte
+    if (!getAppPath(path, pathSize)){
+        return false;
+    }
+    // If running in a Mac app bundle, the runtime library is in xxx.app/Contents/Resources/
+    char *macAppPrefix = strstr(path, ".app/Contents/MacOS/");
+    if (macAppPrefix) {
+        *(macAppPrefix + 14) = 0; // truncate after ".app/Contents/"
+        strncat(path, "Resources/", pathSize);
+    }
 #else
-	DIR *dir = opendir("runtime/lib");
-	if (dir) {
-		struct dirent *entry;
-		while ((entry = readdir(dir))) {
-			if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
-				snprintf(fName, 200, "runtime/lib/%s", entry->d_name);
- 				parse_runFile(fName);
- 				loadedCount++;
-			}
-		}
-		closedir(dir);
-	}
+    snprintf(path, buffSize, "");
 #endif
-	printf("Loaded %d library files from runtime/lib\n", loadedCount);
-	if (runStartup) parse_runFile("runtime/startup.gp");
+    return true;
 }
+
+
+static void readLibraryFromFileSystem(gp_boolean runStartup) {
+    char libraryDirPath[1024];
+    char filePath[1024];
+    int loadedCount = 0;
+
+    int ok = getPathToRuntimeLibrary(libraryDirPath, sizeof((libraryDirPath)));
+    if(!ok){
+        printf("Could not load get path to runtime/lib\n");
+        return;
+    }
+
+#ifdef _WIN32
+    char entry[200]; // directory entry name
+    WIN32_FIND_DATAW info;
+    HANDLE hFind = FindFirstFileW(L"runtime\\lib\\*.gp", &info);
+    if (INVALID_HANDLE_VALUE != hFind) {
+        do {
+            if ((info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+                entry[0] = 0; // null terminate in case conversion fails
+                WideCharToMultiByte(CP_UTF8, 0, info.cFileName, -1, entry, sizeof(entry), NULL, NULL);
+                if (isGPFile(entry)) {
+                    snprintf(filePath, sizeof(filePath), "runtime/lib/%s", entry);
+                    parse_runFile(filePath);
+                    loadedCount++;
+                }
+            }
+        } while (FindNextFileW(hFind, &info) != 0);
+    }
+    FindClose(hFind);
+#else
+        snprintf(filePath, sizeof(filePath), "%sruntime/lib", libraryDirPath);
+        DIR *dir = opendir(filePath);
+        if (dir) {
+            struct dirent *entry;
+            while ((entry = readdir(dir))) {
+                if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
+                    snprintf(filePath, sizeof(filePath), "%sruntime/lib/%s", libraryDirPath, entry->d_name);
+                    parse_runFile(filePath);
+                    loadedCount++;
+                }
+            }
+            closedir(dir);
+        }
+#endif
+        printf("Loaded %d library files from %sruntime/lib\n", loadedCount, libraryDirPath);
+        if (runStartup){
+            snprintf(filePath, sizeof(filePath), "%sruntime/startup.gp", libraryDirPath);
+            parse_runFile(filePath);
+        }
+}
+
 
 #endif // EMSCRIPTEN
 

@@ -118,44 +118,6 @@ static long findDataStart(FILE *f) {
 	return NO_EMBEDDED_FS;
 }
 
-static int getAppPath(char *path, int pathSize) {
-	// Copy the full path for the application (up to pathSize - 1 bytes) into path.
-	// Return true on success.
-
-	path[0] = 0; // null terminate string in case of failure
-#if defined(MAC)
-	pid_t pid = getpid();
-	if (!proc_pidpath(pid, path, pathSize)) return false;
-#elif defined(_WIN32)
-	#define RESULT_SIZE 1000
-	WCHAR wideResult[RESULT_SIZE];
-	int len = GetModuleFileNameW(NULL, wideResult, RESULT_SIZE);
-	if ((len == 0) || (len >= RESULT_SIZE)) return false; // failed or result did not fit
-
-	// convert result from wide string to utf8
-	len = WideCharToMultiByte(CP_UTF8, 0, wideResult, -1, path, pathSize, NULL, NULL);
-	if ((len == 0) || (len >= pathSize)) return false; // failed or result did not fit
-
-	// replace backslashes with GP-standard forward slashes
-	for (int i = 0; i < len; i++) {
-	  int ch = path[i];
-	  if ('\\' == ch) path[i] = '/';
-	}
-	return true;
-#elif defined(__linux__) || defined(IOS)
-	if (!realpath(argv0, path)) {
-		// try using /proc (may not work on all Linux systems)
-		int byteCount = readlink("/proc/self/exe", path, pathSize);
-		if (byteCount < 0) return false; // readlink failed
-		path[byteCount] = 0; // null terminate result
-	}
-#else
-	return false;
-#endif
-
-	path[pathSize - 1] = 0; // ensure null termination
-	return true;
-}
 
 // Zip file operations
 
@@ -409,4 +371,44 @@ FILE * openAppFile() {
 		}
 	#endif
 	return fopen(path, "rb");
+}
+
+
+int getAppPath(char *path, int pathSize) {
+    // Copy the full path for the application (up to pathSize - 1 bytes) into path.
+    // Return true on success.
+
+    path[0] = 0; // null terminate string in case of failure
+#if defined(MAC)
+    pid_t pid = getpid();
+    if (!proc_pidpath(pid, path, pathSize)) return false;
+#elif defined(_WIN32)
+#define RESULT_SIZE 1000
+    WCHAR wideResult[RESULT_SIZE];
+    int len = GetModuleFileNameW(NULL, wideResult, RESULT_SIZE);
+    if ((len == 0) || (len >= RESULT_SIZE)) return false; // failed or result did not fit
+
+    // convert result from wide string to utf8
+    len = WideCharToMultiByte(CP_UTF8, 0, wideResult, -1, path, pathSize, NULL, NULL);
+    if ((len == 0) || (len >= pathSize)) return false; // failed or result did not fit
+
+    // replace backslashes with GP-standard forward slashes
+    for (int i = 0; i < len; i++) {
+        int ch = path[i];
+        if ('\\' == ch) path[i] = '/';
+    }
+    return true;
+#elif defined(__linux__) || defined(IOS)
+    if (!realpath(argv0, path)) {
+        // try using /proc (may not work on all Linux systems)
+        int byteCount = readlink("/proc/self/exe", path, pathSize);
+        if (byteCount < 0) return false; // readlink failed
+        path[byteCount] = 0; // null terminate result
+    }
+#else
+    return false;
+#endif
+
+    path[pathSize - 1] = 0; // ensure null termination
+    return true;
 }

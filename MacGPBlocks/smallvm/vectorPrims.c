@@ -15,7 +15,7 @@
 	#define lineTo cairo_line_to
 	#define moveTo cairo_move_to
 #else
-	#include <cairo/cairo.h>
+#include "cairo/cairo.h"
 
 	#define closePath cairo_close_path
 	#define curveTo cairo_curve_to
@@ -358,9 +358,9 @@ static void strokePath(OBJ bitmapOrTexture, OBJ path, OBJ strokeColor, double li
 
 #else
 
-#include <cairo/cairo.h>
+#include "cairo/cairo.h"
 
-#include <SDL.h>
+#include "SDL.h"
 extern SDL_Surface *screenBitmap;
 
 static inline cairo_surface_t * bitmap2surface(OBJ bitmap) {

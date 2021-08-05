@@ -13,7 +13,7 @@
 #include "dict.h"
 
 #ifndef EMSCRIPTEN
-	#include <SDL.h>
+#include "SDL.h"
 	extern SDL_Surface *screenBitmap;
 #endif
 
