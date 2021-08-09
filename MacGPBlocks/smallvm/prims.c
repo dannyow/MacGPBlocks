@@ -41,9 +41,11 @@
 #include <sys/wait.h>
 #endif
 
+int getPathToRuntimeLibrary(char *path, int pathSize);
+
 // ***** Version Date and Time *****
 
-static char *versionNum = "v267";
+static char *versionNum = "v267-dev";
 static char *versionDate = __DATE__;
 static char *versionTime = __TIME__;
 
@@ -965,7 +967,17 @@ OBJ primReadFile(int nargs, OBJ args[]) {
 #ifdef _WIN32
 	FILE *f = _wfopen(utf82wide(fileName), L"rb"); // 'b' needed to avoid premature EOF on Windows
 #else
-	FILE *f = fopen(fileName, "rb"); // 'b' needed to avoid premature EOF on Windows
+	//FILE *f = fopen(fileName, "rb"); // 'b' needed to avoid premature EOF on Windows
+    char filePath[1024];
+    if(0 == strncmp("runtime/", fileName, strlen("runtime/")) ){
+        char libraryDirPath[1024];
+        getPathToRuntimeLibrary(libraryDirPath, sizeof((libraryDirPath)));
+        snprintf(filePath, sizeof(filePath), "%s%s",libraryDirPath, fileName);
+    }else{
+        strncpy(filePath, fileName, sizeof(filePath));
+    }
+    FILE *f = fopen(filePath, "rb");
+
 #endif
 	if (!f) return nilObj; // file doesn't exist
 
