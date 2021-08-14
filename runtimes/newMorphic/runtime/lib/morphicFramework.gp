@@ -971,6 +971,9 @@ method processEvents Page {
 	} (type == 'dropFile') {
 	  add droppedFiles evt
    } (type == 'quit') {
+      if (global 'skipQuitConfirmation') {
+        exit  
+      }
       confirmToQuit this
     }
     evt = nxt
