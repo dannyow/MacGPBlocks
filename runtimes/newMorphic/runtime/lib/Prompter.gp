@@ -23,7 +23,7 @@ method initialize Prompter label default editRule anAction details {
   minW = (titleBarWidth window)
   fontName = 'Arial'
   fontSize = (14 * (global 'scale'))
-  if ('Linux' == (platform)) { fontSize = (11 * (global 'scale')) }
+  if ('Linux' == (platform)) { fontSize = (13 * (global 'scale')) }
 
   if (notNil details) {
 	  detailsText = (newText details fontName fontSize)

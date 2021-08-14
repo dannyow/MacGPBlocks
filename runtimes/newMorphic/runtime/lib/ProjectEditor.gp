@@ -87,7 +87,7 @@ method initialize ProjectEditor aProject {
   library = (initialize (new 'SpriteLibrary') scripter)
   addPart morph (morph library)
   setStageMorph scripter (morph stage)
-  tabs = (tabBar (list 'Scripts' 'Images' 'Sounds' 'Notes') nil (action 'showTab' this) (transparent) 12)
+  tabs = (tabBar (list 'Scripts' 'Images' 'Sounds' 'Notes') nil (action 'showTab' this) (transparent) 15)
   setBGColors tabs (gray 240) (gray 150) (gray 100) // match tab colors to Scripter border and class pane colors
   addPart morph (morph tabs)
 
