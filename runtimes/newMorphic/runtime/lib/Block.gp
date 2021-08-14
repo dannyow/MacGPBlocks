@@ -1412,6 +1412,8 @@ to blockForSpec spec {
   block = (new 'Block')
   spec = (translateToCurrentLanguage (authoringSpecs) spec)
   initializeForSpec block spec
+
+  fixLayout block 
   return block
 }
 

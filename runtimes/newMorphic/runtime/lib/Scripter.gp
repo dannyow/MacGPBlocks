@@ -200,9 +200,14 @@ method fixLayout Scripter {
   packPanesV packer classPane 28 blocksFrame blocksHeight
   finishPacking packer
 
-  fixClassPaneLayout this
-  redraw blocksFrame
-  redraw scriptsFrame
+  //fixClassPaneLayout this
+
+  fixLayout categoriesFrame
+  fixLayout blocksFrame
+  fixLayout scriptsFrame
+
+  //redraw blocksFrame
+  //redraw scriptsFrame
   fixResizerLayout this
   if (notNil projectEditor) { fixLayout projectEditor }
 }

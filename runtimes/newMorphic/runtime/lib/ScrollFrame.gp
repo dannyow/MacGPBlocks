@@ -299,6 +299,11 @@ method autoScroll ScrollFrame hand obj {
   }
 }
 
+method fixLayout ScrollFrame {
+  adjustContents this
+  updateSliders this
+}
+
 method drawOn ScrollFrame ctx {
   bm = (cachedContents this)
   if (notNil bm) {

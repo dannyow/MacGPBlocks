@@ -24,6 +24,7 @@ method initialize BlockEditor contents {
 method fixLayout BlockEditor {
   fixLayout window
   clientArea = (clientArea window)
+  fixLayout scriptsFrame
   setPosition (morph scriptsFrame) (left clientArea) (top clientArea)
   setExtent (morph scriptsFrame) (width clientArea) (height clientArea)
 }

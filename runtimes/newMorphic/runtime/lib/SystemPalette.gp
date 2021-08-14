@@ -203,4 +203,7 @@ method fixLayout SystemPalette {
   packPanesV packer classListFrame 'rest'
   packPanesV packer blocksFrame 'rest'
   finishPacking packer
+
+  fixLayout classListFrame
+  fixLayout blocksFrame
 }

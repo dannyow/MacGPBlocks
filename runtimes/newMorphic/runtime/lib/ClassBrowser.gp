@@ -73,6 +73,11 @@ method fixLayout ClassBrowser {
   packPanesV packer fieldsFrame '30%' methodsFrame 'rest'
   packPanesV packer scriptsFrame '100%'
   finishPacking packer
+
+  fixLayout fieldsFrame
+  fixLayout scriptsFrame
+  fixLayout methodsFrame
+
 }
 
 method redraw ClassBrowser {
