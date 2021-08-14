@@ -98,6 +98,7 @@ method showMenu BlockSearchBox specList {
   setField menu 'returnFocus' searchText
   for spec specList {
 	aBlock = (blockForSpec spec)
+  fixLayout aBlock 
 	addItem menu (fullCostume (morph aBlock)) (action 'grabBlock' this aBlock)
   }
   popUp menu (page morph) (left morph) (bottom morph) true // suppress focus
