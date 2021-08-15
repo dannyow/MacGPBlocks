@@ -38,7 +38,7 @@ to openProjectEditor tryRetina devMode {
   if (and ('Browser' == (platform)) (browserIsMobile)) {
 	page = (newPage 1024 640)
   } else {
-	page = (newPage 1120 700)
+	page = (newPage 1600 1000)//(newPage 1120 700)
   }
   setDevMode page devMode
   setGlobal 'page' page
@@ -77,7 +77,7 @@ method initialize ProjectEditor aProject {
   scale = (global 'scale')
   morph = (newMorph this)
   project = aProject
-  viewerWidth = ((width (global 'page')) - (800 * scale))
+  viewerWidth = ((width (global 'page')) - (100 * scale))
   viewerWidth = (max viewerWidth (400 * scale))
   addTopBarParts this
   scripter = (initialize (new 'Scripter') this)
@@ -799,7 +799,9 @@ method fixTopBarLayout ProjectEditor {
 method fixViewerLayout ProjectEditor {
   m = (morph viewer)
   setPosition m 0 (bottom morph)
-  maxW = (round (4096 / (global 'scale')))
+  maxW = (width (morph (global 'page')))
+  // maxW = (round (4096 / (global 'scale')))
+
   if ((width m) > maxW) {
 	setExtent m maxW (height m)
 	viewerWidth = maxW
