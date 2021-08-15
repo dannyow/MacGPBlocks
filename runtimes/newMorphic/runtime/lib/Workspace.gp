@@ -10,8 +10,8 @@ method initialize Workspace contents {
   setHandler morph this
   setMinExtent morph (scale * 140) (scale * 50)
 
-  textBox = (newText contents)
-  setEditRule textBox 'code'
+  textBox = (newText contents 'Courier' (15 * scale))
+  setEditRule textBox 'code' 
   setGrabRule (morph textBox) 'ignore'
   setBorders textBox (border window) (border window)
   textFrame = (scrollFrame textBox (clientColor window))
@@ -22,6 +22,7 @@ method initialize Workspace contents {
 
 method fixLayout Workspace {
   fixLayout window
+  fixLayout textFrame
   clientArea = (clientArea window)
   setPosition (morph textFrame) (left clientArea) (top clientArea)
   setExtent (morph textFrame) (width clientArea) (height clientArea)
