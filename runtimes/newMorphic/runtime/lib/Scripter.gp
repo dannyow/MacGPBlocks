@@ -151,7 +151,7 @@ method makeClassPane Scripter {
   addPart (morph classPane) (morph newInstanceButton)
   if (notNil projectEditor) { hide (morph newInstanceButton) }
 
-  searchBox = (newBlockSearchBox 90 19)
+  searchBox = (newBlockSearchBox (200 * scale) 22 )
   addPart (morph classPane) (morph searchBox)
 
   return classPane
@@ -200,7 +200,7 @@ method fixLayout Scripter {
   packPanesV packer classPane 28 blocksFrame blocksHeight
   finishPacking packer
 
-  //fixClassPaneLayout this
+  fixClassPaneLayout this
 
   fixLayout categoriesFrame
   fixLayout blocksFrame
