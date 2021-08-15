@@ -19,7 +19,9 @@ method initialize AuthoringSpecs {
   addSpecs this (initialSpecs this)
   return this
 }
-
+method allCategories AuthoringSpecs {
+  return (unique (values opCategory))
+}
 method clear AuthoringSpecs {
   specsList = (list)
   specsByOp = (dictionary)
