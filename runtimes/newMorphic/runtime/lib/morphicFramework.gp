@@ -195,8 +195,13 @@ method fixCachedCostume Hand aBitmap {
 
 method rootForGrab Hand handler {
   result = handler
+  kbd = (keyboard page)
   while (notNil result) {
     rule = (grabRule (morph result))
+    // when alt/option is pressed while dragging it always mean duplicate
+    if (and (devMode) (optionKeyDown kbd) (rule == 'handle')) {
+      return (duplicate result)
+    }
     if (rule == 'ignore') {return nil}
     if (rule == 'handle') {return result}
     if (rule == 'draggableParts') {return result}
@@ -375,12 +380,12 @@ method processDown Hand button {
   closeUnclickedMenu page currentObj
   lastTouched = currentObj
   lastTouchTime = (newTimer)
-  if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
-	showInScripter currentObj
-	lastTouched = nil
-	lastTouchTime = nil
-	return
-  }
+  // if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
+	// showInScripter currentObj
+	// lastTouched = nil
+	// lastTouchTime = nil
+	// return
+  // }
   trg = currentObj
   while (notNil trg) {
 	if (and (acceptsEvents trg) (handDownOn trg this)) { return }
