@@ -557,6 +557,12 @@ method clicked Block hand {
   } (and (devMode) (keyDown kbd 'space')) {
     turnIntoText (topBlock this) hand
     return true
+  } (and (devMode) (keyDown kbd 'x')) { // press x on click to remove block
+    isInPalette = ('template' == (grabRule (morph tb)))
+    if  (not isInPalette) {
+      (delete tb)
+    }
+    return true
   }
 
   if (and (contains (array 'template' 'defer') (grabRule morph)) (isRenamableVar this)) {
