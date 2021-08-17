@@ -992,7 +992,7 @@ method turnIntoText Block hand {
   code = (toTextCode this)
   x = (left morph)
   y = (top morph)
-  txt = (newText code 'Arial' ((global 'scale') * 12) (color))
+  txt = (newText code 'Arial' ((global 'scale') * 14) (color))
   setEditRule txt 'code'
   setGrabRule (morph txt) 'ignore'
   addSchedule (global 'page') (newAnimation 1.0 0.7 200 (action 'setScaleAround' morph (left morph) (top morph)) (action 'swapTextForBlock' (handler owner) txt this hand) true)
