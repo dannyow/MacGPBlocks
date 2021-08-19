@@ -1119,7 +1119,7 @@ method interactionLoop Page {
 
 // scheduling
 
-method addSchedule Page aSchedule {add schecdules aSchedule}
+method addSchedule Page aSchedule {add schedules aSchedule}
 
 method stepSchedules Page {
   if (isEmpty schedules) {return}
