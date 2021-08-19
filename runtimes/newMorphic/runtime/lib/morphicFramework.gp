@@ -129,6 +129,12 @@ method objectAt Hand pixelPerfect {
   return page
 }
 
+method isBusy Hand {
+  if (or (notNil focus)  (notEmpty (parts morph))) { return true }
+  if (hasActiveMenu page) { return true }
+  return false
+}
+
 // drawing
 
 method drawOn Hand aContext { } // noop
@@ -293,11 +299,10 @@ method step Hand {
 method processEvent Hand evt {
   type  = (at evt 'type')
   if (type == 'mousewheel') {
-	wheelScale = (5 * (global 'scale'))
-	if ('Linux' == (platform)) {
-		// Linux only reports +/- 1 for mousewheel events so scale them up
-		wheelScale = (50 * (global 'scale'))
-	}
+	// Windows and Linux only report +/- 1 for mousewheel events so scale them up
+	wheelScale = (60 * (global 'scale'))
+	if ('Browser' == (platform)) { wheelScale = (1 * (global 'scale')) }
+	if ('Mac' == (platform)) { wheelScale = (10 * (global 'scale')) }
     processSwipe this (wheelScale * (at evt 'x')) (wheelScale * (at evt 'y'))
     return
   }
@@ -374,18 +379,20 @@ method processDown Hand button {
 	stopEditingUnfocusedText this currentObj
   }
   if (or (button == 3) (commandKeyDown (keyboard page))) {
+    closeUnclickedMenu page currentObj
     processRightClicked this currentObj
     return
   }
   closeUnclickedMenu page currentObj
   lastTouched = currentObj
   lastTouchTime = (newTimer)
-  // if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
-	// showInScripter currentObj
-	// lastTouched = nil
-	// lastTouchTime = nil
-	// return
-  // }
+  if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
+
+	showInScripter currentObj
+	lastTouched = nil
+	lastTouchTime = nil
+	return
+  }
   trg = currentObj
   while (notNil trg) {
 	if (and (acceptsEvents trg) (handDownOn trg this)) { return }
@@ -834,6 +841,13 @@ to devMode {
   return (getField page 'devMode')
 }
 
+to debugPrintTime t label {
+	time = (msecSplit t)
+	if (time > 15) {
+		print label ':' time
+	}
+}
+
 // stepping
 
 method doOneCycle Page {
@@ -889,19 +903,20 @@ method addDamage Page newRect {
 
   if (isEmpty damages) { // new rectangle is the first damage; just add it
 	add damages (copy newRect)
-  } else {
-	if (intersects (last damages) newRect) {
-	  if (not (containsRectangle (last damages) newRect)) {
-		// optimization: merge the new rectangle with the last one rather than adding it --
-		// but only if the new rectangle is not already contained in the last one
-		r = (removeLast damages)
-		add damages (mergedWith r newRect)
-	  }
-	} else {
-	  // newRect doesn't overlap the last damage rect, so add it
-	  add damages (copy newRect)
-	}
+	return
   }
+
+  // try to merge with an existing damage rectangle
+  for i (count damages) {
+	r = (at damages i)
+	if (intersects newRect r) {
+      atPut damages i (mergedWith newRect r) // merge!
+      return
+    }
+  }
+
+  // newRect doesn't overlap any existing damage rectangle, so add it
+  add damages (copy newRect)
 }
 
 method fixDamages Page {
@@ -1103,7 +1118,7 @@ method interactionLoop Page {
 
 // scheduling
 
-method addSchedule Page aSchedule {add schedules aSchedule}
+method addSchedule Page aSchedule {add schecdules aSchedule}
 
 method stepSchedules Page {
   if (isEmpty schedules) {return}

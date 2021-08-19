@@ -385,8 +385,8 @@ method isHidden Morph {return (not isVisible)}
 
 method hide Morph {
   if isVisible {
-    isVisible = false
     changed this
+    isVisible = false
   }
 }
 
@@ -635,8 +635,8 @@ method parentHandler Morph {
 }
 
 method fullBounds Morph {
-  if (or isClipping (isEmpty parts)) { return bounds }
   result = (copy bounds)
+  if (or isClipping (isEmpty parts)) { return result }
   for m parts {
     if (getField m 'isVisible') {
       merge result (fullBounds m)
@@ -934,18 +934,22 @@ method destroy Morph recoverable {
 
 method moveBy Morph xDelta yDelta {
   if (and (xDelta == 0) (yDelta == 0)) { return }
-  changed this
-  if (isPenDown this) {movePenBy this xDelta yDelta}
-  translateBy bounds xDelta yDelta
-  for m parts {moveBy m xDelta yDelta}
-  changed this
+  fb = (fullBounds this)
+  reportDamage this fb
+  if (isPenDown this) { movePenBy this xDelta yDelta }
+  fastMoveBy this xDelta yDelta
+  reportDamage this (translatedBy fb xDelta yDelta)
 }
 
-// fast positioning functions used for block layout
+// fast positioning functions -- these do not report damage!
 
 method fastSetPosition Morph x y { fastMoveBy this (x - (left bounds)) (y - (top bounds)) }
 method fastSetLeft Morph x { fastMoveBy this (x - (left bounds)) 0 }
 method fastSetTop Morph y { fastMoveBy this 0 (y - (top bounds)) }
+method fastSetRight Morph x {fastMoveBy this (x - (right bounds)) 0}
+method fastSetBottom Morph y {fastMoveBy this 0 (y - (bottom bounds))}
+method fastSetXCenter Morph x {fastMoveBy this (x - ((left bounds) + (half (width bounds)))) 0}
+method fastSetYCenter Morph y {fastMoveBy this 0 (y - ((top bounds) + (half (height bounds))))}
 
 method fastSetYCenterWithin Morph top bottom {
   ySpan = (bottom - top)
@@ -958,7 +962,7 @@ method fastSetYCenterWithin Morph top bottom {
 }
 
 method fastMoveBy Morph xDelta yDelta {
-  // Internal version of moveBy used for block layout.
+  // Internal helper for moveBy. Just moves the morph and all its descendent morphs.
   // Does not report damage or move the pen.
 
   if (and (xDelta == 0) (yDelta == 0)) { return }
@@ -1143,10 +1147,9 @@ method fullDrawOn Morph aContext {
 	  }
 	}
   }
-  // draw its parts (except for caching ScrollFrames)
-  if (not (and (isClass handler 'ScrollFrame') (cachingEnabled handler))) {
-	for each parts { fullDrawOn each aContext }
-  }
+
+  // draw its parts
+  for each parts { fullDrawOn each aContext }
   restoreState aContext
 }
 
@@ -1169,12 +1172,6 @@ method drawCostumeOn Morph aContext {
 
   x = (left bounds)
   y = (top bounds)
-
-  if (and (isClass handler 'ScrollFrame') (cachingEnabled handler)) {
-	// special case: draw ScrollFrame when it is caching
-	drawOn handler aContext
-	return
-  }
 
   if (isClass costumeData 'Color') {
 	fillRect aContext costumeData x y (width this) (height this) 1 // blend mode
@@ -1242,11 +1239,7 @@ method draw Morph destination xOffset yOffset destScaleX destScaleY clipRect {
   }
 
   for each parts {
-	if (and (isClass (handler each) 'ScrollFrame') (notNil (cachedContents (handler each)))) {
-	  drawBitmap destination (cachedContents (handler each)) (left each) (top each)
-	} else {
-	  draw each destination xOffset yOffset destScaleX destScaleY clipRect
-	}
+    draw each destination xOffset yOffset destScaleX destScaleY clipRect
   }
 }
 
@@ -1353,10 +1346,10 @@ method step Morph {
 // change propagation
 
 method changed Morph {
-  if (notNil owner) {
+  if (and isVisible (notNil owner)) {
 	reportDamage owner bounds
   } (and (isClass handler 'Hand') (notEmpty parts)) {
- 	reportDamage (morph (global 'page')) (expandBy (fullBounds this) 15) // expand to include shadow
+ 	reportDamage (morph (global 'page')) (fullBounds this)
   }
 }
 
@@ -1365,8 +1358,12 @@ method reportDamage Morph rect {
   // Propagation is stopped by an invisble morph (whose subtree is also invisible).
   // The damage rectangle is clipped to the bounds of clipping morphs.
 
+  if (not isVisible) { return }
+
   if (isClass handler 'Page') {
 	addDamage handler rect
+  } (isClass handler 'Hand') {
+	if (not (isEmpty parts)) { reportDamage (morph (global 'page')) rect }
   } (isClass handler 'Stage') {
 	if costumeChanged { return } // stage has already reported damage
 	costumeChanged = true // stage uses this flag to indicate that damage has been reported
