@@ -217,7 +217,7 @@ static int readLibraryFromDir(char *dirPath, int loadedCount, int maxDepth){
         while ((entry = readdir(dir))) {
             if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
                 snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
-                printf("Loading... %s\n", filePath);
+                //printf("Loading... %s\n", filePath);
                 parse_runFile(filePath);
                 loadedFromFolder++;
 
