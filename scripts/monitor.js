@@ -1,9 +1,9 @@
 const chokidar = require('chokidar');
 const { exec } = require('child_process');
 
-const watchedSrcs = './runtimes/new-morphic/**';
-// const watchedSrcs = './runtimes/minimal/**';
-const commandToExecute = '/Users/daniel/Library/Developer/Xcode/DerivedData/MacGPBlocks-hjsojqtrcfseoygrklnrdoecdoqj/Build/Products/Debug/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+const watchedSrcs = './runtimes/anamorphic/**';
+// App is copied to .build as post-action in xcode (see post-action-copy-app-for-monitor.sh)
+const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
 
 const watcher = chokidar.watch(watchedSrcs, {
     // ignored: /(^|[\/\\])\../, // ignore dotfiles
