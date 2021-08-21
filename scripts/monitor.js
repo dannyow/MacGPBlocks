@@ -1,7 +1,7 @@
 const chokidar = require('chokidar');
 const { exec } = require('child_process');
 
-const watchedSrcs = './runtimes/newMorphic/**';
+const watchedSrcs = './runtimes/new-morphic/**';
 // const watchedSrcs = './runtimes/minimal/**';
 const commandToExecute = '/Users/daniel/Library/Developer/Xcode/DerivedData/MacGPBlocks-hjsojqtrcfseoygrklnrdoecdoqj/Build/Products/Debug/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
 

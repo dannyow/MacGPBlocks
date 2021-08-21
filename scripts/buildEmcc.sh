@@ -12,7 +12,7 @@
 set -x
 
 SOURCE_DIR=MacGPBlocks/smallvm
-RUNTIME_DIR=runtimes/newMorphic/runtime
+RUNTIME_DIR=runtimes/new-morphic/runtime
 WEBAPP_DIR=webapp
 BUILD_DIR=.build
 

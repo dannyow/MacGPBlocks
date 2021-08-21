@@ -3,21 +3,16 @@ to startup {
     // usefull when used with ./scripts/monitor.js
     setGlobal 'skipQuitConfirmation' true
 
-
     //listFunctions
-
     defaulProjectEditor
-
     // emptyWindow 'Hello!? 👋'
-    // blockEditorWithAnimationDemo
+    //blockEditorWithAnimationDemo
     // renderBlock
     // openSynopsisWindow
     // openClassBrowser
     // howToCallFunction
 
 }
-
-
 
 to listFunctions {
 
@@ -100,6 +95,7 @@ to renderBlock {
 to blockEditorWithAnimationDemo {
     page = (newPage 1600 800)
     tryRetina = true
+   
     setDevMode page true
     setGlobal 'page' page
     open page tryRetina 'Blocks Editor' 

@@ -2,3 +2,11 @@
 /MacGPBlocks/runtime-from-GPapp
 /MacGPBlocks/runtime-from-microblocks
 /**/* copy
+/scripts/node_modules
+/runtimes/minimal/runtime/startup-benchmarks.gp
+/benchmarks
+/.build
+/webapp/gp_wasm.data
+/webapp/gp_wasm.html
+/webapp/gp_wasm.js
+/webapp/gp_wasm.wasm
