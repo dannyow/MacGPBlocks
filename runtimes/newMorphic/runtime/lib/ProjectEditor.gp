@@ -468,12 +468,26 @@ method checkForBrowserResize ProjectEditor {
   w = (first browserSize)
   h = (last browserSize)
   winSize = (windowSize)
-  if (and (w == (at winSize 1)) (h == (at winSize 2))) { return }
-  openWindow w h
-  pageM = (morph (global 'page'))
-  setExtent pageM w h
+  if (and
+  	((abs ((at winSize 1) - w)) < 10)
+  	((abs ((at winSize 2) - h)) < 10)) {
+  		// size may be off by a few pixels due to rounding
+  		return
+  }
+
+  openWindow w h true
+  page = (global 'page')
+  oldScale = (global 'scale')
+  updateScale page
+  scale = (global 'scale')
+  pageM = (morph page)
+  setExtent pageM (w * scale) (h * scale)
   for each (parts pageM) { pageResized (handler each) w h this }
+  if (scale != oldScale) {
+	for m (allMorphs pageM) { scaleChanged (handler m) }
+  }
 }
+
 
 method processBrowserMessages ProjectEditor {
   while true {
