@@ -6,10 +6,10 @@ to startup {
 
     //listFunctions
 
-    //defaulProjectEditor
+    defaulProjectEditor
 
     // emptyWindow 'Hello!? 👋'
-    blockEditorWithAnimationDemo
+    // blockEditorWithAnimationDemo
     // renderBlock
     // openSynopsisWindow
     // openClassBrowser
@@ -202,7 +202,7 @@ to defaulProjectEditor {
         (array ' ' 'fun_'       'funcSP _' 'cmd')
 
     )
-
+    setGlobal 'flatBlocks' true
     setGlobal 'authoringSpecs' specs
     openProjectEditor tryRetina useDevMode
 }
