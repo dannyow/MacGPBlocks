@@ -9,19 +9,28 @@
 #
 # Increased memory from 136314880 (130 MB) to 209715200 (~200 MB)
 
-set -x
+# set -x # debug
 
-SOURCE_DIR=MacGPBlocks/smallvm
-RUNTIME_DIR=runtimes/new-morphic/runtime
-WEBAPP_DIR=webapp
+RUNTIME_SRC_DIR=${1:-runtimes/anamorphic/runtime}
+VM_SRC_DIR=MacGPBlocks/smallvm
+WEBAPP_TARGET_DIR=webapp
 BUILD_DIR=.build
+
 
 rm -r $BUILD_DIR
 mkdir -p $BUILD_DIR
 
-cp -r $SOURCE_DIR $BUILD_DIR
-cp -r $RUNTIME_DIR $BUILD_DIR
+echo "✅ Copying vm sources from >${VM_SRC_DIR}"
+cp -r $VM_SRC_DIR $BUILD_DIR
 
+# GP files can be located in subfolders in $RUNTIME_SRC_DIR, for browser we need to put them all in a single folder
+echo "✅ Copying runtime sources from >${RUNTIME_SRC_DIR}"
+mkdir -p $BUILD_DIR/runtime/lib
+cp $RUNTIME_SRC_DIR/* $BUILD_DIR/runtime 2>/dev/null               # Copy top level files
+cp $RUNTIME_SRC_DIR/lib/* $BUILD_DIR/runtime/lib 2>/dev/null        # Copy files from lib/ that are not in subfolder
+cp -R $RUNTIME_SRC_DIR/lib/**/* $BUILD_DIR/runtime/lib 2>/dev/null  # Flatten the subfolders structure into one lib/
+
+echo "✅ Building..."
 cd "$BUILD_DIR/smallvm"
 emcc -std=gnu99 -Wall -O3 \
     -D EMSCRIPTEN \
@@ -41,6 +50,6 @@ emcc -std=gnu99 -Wall -O3 \
 cd "../.."
 
 rm "$BUILD_DIR/gp_wasm.html"
-cp "$BUILD_DIR/gp_wasm.data" $WEBAPP_DIR
-cp "$BUILD_DIR/gp_wasm.js" $WEBAPP_DIR
-cp "$BUILD_DIR/gp_wasm.wasm" $WEBAPP_DIR
+cp "$BUILD_DIR/gp_wasm.data" $WEBAPP_TARGET_DIR
+cp "$BUILD_DIR/gp_wasm.js" $WEBAPP_TARGET_DIR
+cp "$BUILD_DIR/gp_wasm.wasm" $WEBAPP_TARGET_DIR
