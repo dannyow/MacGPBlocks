@@ -449,7 +449,7 @@ int getPathToRuntimeLibrary(char *path, int pathSize){
         strncat(path, "Resources/", pathSize);
     }
 #else
-    snprintf(path, buffSize, "");
+    snprintf(path, pathSize, "");
 #endif
     return true;
 }
