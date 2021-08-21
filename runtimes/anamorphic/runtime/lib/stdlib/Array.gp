@@ -564,3 +564,9 @@ to withoutAll c1 c2 {
   }
   return result
 }
+
+to unique collection {
+  result = (dictionary)
+  addAll result collection
+  return (keys result)
+}

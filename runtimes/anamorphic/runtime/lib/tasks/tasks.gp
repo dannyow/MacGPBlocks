@@ -55,7 +55,7 @@ to newTask cmdList targetObj doneAction {
   }
 
   if (notNil targetObj) {
-	  func = (functionFor targetObj cmdList)
+	func = (functionFor targetObj cmdList)
     cmdList = (newReporter 'call' func targetObj)
   }
 

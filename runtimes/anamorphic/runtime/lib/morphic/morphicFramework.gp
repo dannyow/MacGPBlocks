@@ -129,6 +129,12 @@ method objectAt Hand pixelPerfect {
   return page
 }
 
+method isBusy Hand {
+  if (or (notNil focus)  (notEmpty (parts morph))) { return true }
+  if (hasActiveMenu page) { return true }
+  return false
+}
+
 // drawing
 
 method drawOn Hand aContext { } // noop
@@ -195,8 +201,13 @@ method fixCachedCostume Hand aBitmap {
 
 method rootForGrab Hand handler {
   result = handler
+  kbd = (keyboard page)
   while (notNil result) {
     rule = (grabRule (morph result))
+    // when alt/option is pressed while dragging it always mean duplicate
+    if (and (devMode) (optionKeyDown kbd) (rule == 'handle')) {
+      return (duplicate result)
+    }
     if (rule == 'ignore') {return nil}
     if (rule == 'handle') {return result}
     if (rule == 'draggableParts') {return result}
@@ -288,11 +299,10 @@ method step Hand {
 method processEvent Hand evt {
   type  = (at evt 'type')
   if (type == 'mousewheel') {
-	wheelScale = (5 * (global 'scale'))
-	if ('Linux' == (platform)) {
-		// Linux only reports +/- 1 for mousewheel events so scale them up
-		wheelScale = (50 * (global 'scale'))
-	}
+	// Windows and Linux only report +/- 1 for mousewheel events so scale them up
+	wheelScale = (60 * (global 'scale'))
+	if ('Browser' == (platform)) { wheelScale = (1 * (global 'scale')) }
+	if ('Mac' == (platform)) { wheelScale = (10 * (global 'scale')) }
     processSwipe this (wheelScale * (at evt 'x')) (wheelScale * (at evt 'y'))
     return
   }
@@ -369,18 +379,21 @@ method processDown Hand button {
 	stopEditingUnfocusedText this currentObj
   }
   if (or (button == 3) (commandKeyDown (keyboard page))) {
+    closeUnclickedMenu page currentObj
     processRightClicked this currentObj
     return
   }
   closeUnclickedMenu page currentObj
   lastTouched = currentObj
   lastTouchTime = (newTimer)
-  if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
-	showInScripter currentObj
-	lastTouched = nil
-	lastTouchTime = nil
-	return
-  }
+  // Turned off to allow option key to work similarily to graphical apps  opton+drag to duplicate 
+  // if (and (optionKeyDown (keyboard page)) (notNil currentObj)) {
+
+	// showInScripter currentObj
+	// lastTouched = nil
+	// lastTouchTime = nil
+	// return
+  // }
   trg = currentObj
   while (notNil trg) {
 	if (and (acceptsEvents trg) (handDownOn trg this)) { return }
@@ -732,8 +745,7 @@ to newPage width height color {
   if (isNil width) { width = 500 }
   if (isNil height) { height = 500 }
   if (isNil color) {color = (color 250 250 250)}
-  //page = (new 'Page' nil nil nil (newTaskMaster) (newSoundMixer) (list) nil false color nil false nil true nil)
-  page = (new 'Page' nil nil nil (newTaskMaster) nil (list) nil false color nil false nil true nil)
+  page = (new 'Page' nil nil nil (newTaskMaster) (newSoundMixer) (list) nil false color nil false nil true nil)
   morph = (newMorph page)
   setTransparentTouch morph true
   setWidth (bounds morph) width
@@ -774,8 +786,6 @@ method open Page tryRetina title {
 	  openWindow (width morph) (height morph) false title renderToBitmap
 	}
   }
-
-
   redrawAll this
 }
 
@@ -791,10 +801,9 @@ method width Page { return (width morph) }
 method height Page { return (height morph) }
 
 method addPart Page obj {
-
   if (isClass obj 'Morph') {
     addPart morph obj
-  } else {    
+  } else {
     addPart morph (morph obj)
   }
 }
@@ -833,12 +842,20 @@ to devMode {
   return (getField page 'devMode')
 }
 
+to debugPrintTime t label {
+	time = (msecSplit t)
+	if (time > 15) {
+		print label ':' time
+	}
+}
+
 // stepping
 
 method doOneCycle Page {
   // Note: 'step soundMixer' is called at multiple places to decrease the
   // chances of dropping a buffer. This allows the mixer to use a smaller
   // sound output buffer, thus decreasing the latency for starting a sound.
+
   t = (newTimer)
   step soundMixer
   gcIfNeeded
@@ -865,9 +882,8 @@ method doOneCycle Page {
   step soundMixer
   // sleep for any extra time, but always sleep a little to ensure that
   // we get events (and to return control to the browser)
-  sleepTime = (max 1 (2 - (msecs t)))
+  sleepTime = (max 1 (15 - (msecs t)))
   waitMSecs sleepTime
-
 }
 
 // damage recording and redrawing
@@ -888,19 +904,20 @@ method addDamage Page newRect {
 
   if (isEmpty damages) { // new rectangle is the first damage; just add it
 	add damages (copy newRect)
-  } else {
-	if (intersects (last damages) newRect) {
-	  if (not (containsRectangle (last damages) newRect)) {
-		// optimization: merge the new rectangle with the last one rather than adding it --
-		// but only if the new rectangle is not already contained in the last one
-		r = (removeLast damages)
-		add damages (mergedWith r newRect)
-	  }
-	} else {
-	  // newRect doesn't overlap the last damage rect, so add it
-	  add damages (copy newRect)
-	}
+	return
   }
+
+  // try to merge with an existing damage rectangle
+  for i (count damages) {
+	r = (at damages i)
+	if (intersects newRect r) {
+      atPut damages i (mergedWith newRect r) // merge!
+      return
+    }
+  }
+
+  // newRect doesn't overlap any existing damage rectangle, so add it
+  add damages (copy newRect)
 }
 
 method fixDamages Page {
@@ -975,6 +992,9 @@ method processEvents Page {
 	} (type == 'dropFile') {
 	  add droppedFiles evt
    } (type == 'quit') {
+      if (global 'skipQuitConfirmation') {
+        exit  
+      }
       confirmToQuit this
     }
     evt = nxt
@@ -1140,7 +1160,7 @@ method launch Page cmdList targetObj doneAction {
 
 method stopAll Page {
   stopEditing keyboard
-//  stopAllSounds soundMixer // VALAR
+  stopAllSounds soundMixer
   taskMaster = (newTaskMaster)
   return nil
 }
