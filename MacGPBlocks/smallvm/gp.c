@@ -201,24 +201,6 @@ static gp_boolean isGPFile(char *s) {
 	return (strcmp(s + (count - 3), ".gp") == 0);
 }
 
-// Returns slash ended path on macOS or empty string otherwise
-static int getPathToRuntimeLibrary(char *path, int pathSize){
-#ifdef MAC
-    // Mac app holds the runtime library in XXX.app/Conte
-    if (!getAppPath(path, pathSize)){
-        return false;
-    }
-    // If running in a Mac app bundle, the runtime library is in xxx.app/Contents/Resources/
-    char *macAppPrefix = strstr(path, ".app/Contents/MacOS/");
-    if (macAppPrefix) {
-        *(macAppPrefix + 14) = 0; // truncate after ".app/Contents/"
-        strncat(path, "Resources/", pathSize);
-    }
-#else
-    snprintf(path, buffSize, "");
-#endif
-    return true;
-}
 
 
 static void readLibraryFromFileSystem(gp_boolean runStartup) {
@@ -251,25 +233,32 @@ static void readLibraryFromFileSystem(gp_boolean runStartup) {
     }
     FindClose(hFind);
 #else
-        snprintf(filePath, sizeof(filePath), "%sruntime/lib", libraryDirPath);
-        DIR *dir = opendir(filePath);
-        if (dir) {
-            struct dirent *entry;
-            while ((entry = readdir(dir))) {
-                if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
-                    snprintf(filePath, sizeof(filePath), "%sruntime/lib/%s", libraryDirPath, entry->d_name);
-                    parse_runFile(filePath);
-                    loadedCount++;
-                }
+    snprintf(filePath, sizeof(filePath), "%sruntime/lib", libraryDirPath);
+    DIR *dir = opendir(filePath);
+    if (dir) {
+        struct dirent *entry;
+        while ((entry = readdir(dir))) {
+            if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
+                snprintf(filePath, sizeof(filePath), "%sruntime/lib/%s", libraryDirPath, entry->d_name);
+                parse_runFile(filePath);
+                loadedCount++;
             }
-            closedir(dir);
         }
+        closedir(dir);
+    }
 #endif
-        printf("Loaded %d library files from %sruntime/lib\n", loadedCount, libraryDirPath);
-        if (runStartup){
-            snprintf(filePath, sizeof(filePath), "%sruntime/startup.gp", libraryDirPath);
-            parse_runFile(filePath);
+    printf("Loaded %d library files from %sruntime/lib\n", loadedCount, libraryDirPath);
+
+    if (runStartup){
+        char *startupFile = "startup.gp";
+        char *startupFileFromEnv = getenv("GP_RUNTIME_STARTUP_FILE");
+        if(startupFileFromEnv){
+            startupFile = startupFileFromEnv;
         }
+        snprintf(filePath, sizeof(filePath), "%sruntime/%s", libraryDirPath, startupFile);
+        parse_runFile(filePath);
+    }
+
 }
 
 

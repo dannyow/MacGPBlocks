@@ -7,7 +7,9 @@ OBJ extractEmbeddedFile(FILE *f, char *fileName, int isBinary);
 gp_boolean importLibrary();
 FILE * openAppFile();
 
+// Returns a slash ended path to the runtime library.
+// Default path cat be altered with ENV variable GP_RUNTIME_DIR.
+// On macOS the default path is in app's Resources
+int getPathToRuntimeLibrary(char *path, int pathSize);
 
-// Copy the full path for the application (up to pathSize - 1 bytes) into path.
-// Return true on success.
-int getAppPath(char *path, int pathSize);
+

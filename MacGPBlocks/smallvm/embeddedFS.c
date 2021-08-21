@@ -294,6 +294,46 @@ static gp_boolean loadLibraryFrom(FILE *f) {
 	return true;
 }
 
+
+static int getAppPath(char *path, int pathSize) {
+    // Copy the full path for the application (up to pathSize - 1 bytes) into path.
+    // Return true on success.
+
+    path[0] = 0; // null terminate string in case of failure
+#if defined(MAC)
+    pid_t pid = getpid();
+    if (!proc_pidpath(pid, path, pathSize)) return false;
+#elif defined(_WIN32)
+#define RESULT_SIZE 1000
+    WCHAR wideResult[RESULT_SIZE];
+    int len = GetModuleFileNameW(NULL, wideResult, RESULT_SIZE);
+    if ((len == 0) || (len >= RESULT_SIZE)) return false; // failed or result did not fit
+
+    // convert result from wide string to utf8
+    len = WideCharToMultiByte(CP_UTF8, 0, wideResult, -1, path, pathSize, NULL, NULL);
+    if ((len == 0) || (len >= pathSize)) return false; // failed or result did not fit
+
+    // replace backslashes with GP-standard forward slashes
+    for (int i = 0; i < len; i++) {
+        int ch = path[i];
+        if ('\\' == ch) path[i] = '/';
+    }
+    return true;
+#elif defined(__linux__) || defined(IOS)
+    if (!realpath(argv0, path)) {
+        // try using /proc (may not work on all Linux systems)
+        int byteCount = readlink("/proc/self/exe", path, pathSize);
+        if (byteCount < 0) return false; // readlink failed
+        path[byteCount] = 0; // null terminate result
+    }
+#else
+    return false;
+#endif
+
+    path[pathSize - 1] = 0; // ensure null termination
+    return true;
+}
+
 // Public Functions
 
 OBJ appPath() {
@@ -374,41 +414,42 @@ FILE * openAppFile() {
 }
 
 
-int getAppPath(char *path, int pathSize) {
-    // Copy the full path for the application (up to pathSize - 1 bytes) into path.
-    // Return true on success.
 
-    path[0] = 0; // null terminate string in case of failure
-#if defined(MAC)
-    pid_t pid = getpid();
-    if (!proc_pidpath(pid, path, pathSize)) return false;
-#elif defined(_WIN32)
-#define RESULT_SIZE 1000
-    WCHAR wideResult[RESULT_SIZE];
-    int len = GetModuleFileNameW(NULL, wideResult, RESULT_SIZE);
-    if ((len == 0) || (len >= RESULT_SIZE)) return false; // failed or result did not fit
 
-    // convert result from wide string to utf8
-    len = WideCharToMultiByte(CP_UTF8, 0, wideResult, -1, path, pathSize, NULL, NULL);
-    if ((len == 0) || (len >= pathSize)) return false; // failed or result did not fit
-
-    // replace backslashes with GP-standard forward slashes
-    for (int i = 0; i < len; i++) {
-        int ch = path[i];
-        if ('\\' == ch) path[i] = '/';
+// Returns a slash ended path to the runtime library.
+// Default path cat be altered with ENV variable GP_RUNTIME_DIR.
+// On macOS the default path is in app's Resources
+int getPathToRuntimeLibrary(char *path, int pathSize){
+    const char* customRuntimeDir = getenv("GP_RUNTIME_DIR");
+    if(customRuntimeDir){
+        size_t len = strlen(customRuntimeDir);
+        if(pathSize < len){
+            printf("Error: the path buffer is too short (%d) for a path read from GP_RUNTIME_DIR  (%ld)", pathSize, len);
+            exit(1);
+        }
+        strncpy(path, customRuntimeDir, pathSize);
+        char *lastC = path + len - 1;
+        if ( *lastC != '/' ) {
+            printf("Error: the path under $GP_RUNTIME_DIR should end with a slash\n\n");
+            exit(1);
+        }
+        strncpy(path, customRuntimeDir, pathSize);
+        return true;
     }
-    return true;
-#elif defined(__linux__) || defined(IOS)
-    if (!realpath(argv0, path)) {
-        // try using /proc (may not work on all Linux systems)
-        int byteCount = readlink("/proc/self/exe", path, pathSize);
-        if (byteCount < 0) return false; // readlink failed
-        path[byteCount] = 0; // null terminate result
+
+#ifdef MAC
+    // Mac app holds the runtime library in XXX.app/Conte
+    if (!getAppPath(path, pathSize)){
+        return false;
+    }
+    // If running in a Mac app bundle, the runtime library is in xxx.app/Contents/Resources/
+    char *macAppPrefix = strstr(path, ".app/Contents/MacOS/");
+    if (macAppPrefix) {
+        *(macAppPrefix + 14) = 0; // truncate after ".app/Contents/"
+        strncat(path, "Resources/", pathSize);
     }
 #else
-    return false;
+    snprintf(path, pathSize, "");
 #endif
-
-    path[pathSize - 1] = 0; // ensure null termination
     return true;
 }

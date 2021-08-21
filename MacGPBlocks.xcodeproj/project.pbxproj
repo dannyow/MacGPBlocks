@@ -54,7 +54,6 @@
 		659F1F4726BC23EB00A0F189 /* vectorPrims.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vectorPrims.c; sourceTree = "<group>"; };
 		659F1F4826BC23EB00A0F189 /* gp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = gp.c; sourceTree = "<group>"; };
 		659F1F4926BC23EB00A0F189 /* dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dict.c; sourceTree = "<group>"; };
-		659F1F4A26BC23EB00A0F189 /* buildEmcc.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = buildEmcc.sh; sourceTree = "<group>"; };
 		659F1F4B26BC23EB00A0F189 /* events.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = events.c; sourceTree = "<group>"; };
 		659F1F4C26BC23EB00A0F189 /* graphicsPrims.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = graphicsPrims.c; sourceTree = "<group>"; };
 		659F1F4D26BC23EB00A0F189 /* oop.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = oop.c; sourceTree = "<group>"; };
@@ -131,7 +130,6 @@
 			isa = PBXGroup;
 			children = (
 				659F1F5726BC23EB00A0F189 /* browserPrims.c */,
-				659F1F4A26BC23EB00A0F189 /* buildEmcc.sh */,
 				659F1F5626BC23EB00A0F189 /* cache.c */,
 				659F1F5826BC23EB00A0F189 /* cache.h */,
 				659F1F4926BC23EB00A0F189 /* dict.c */,

@@ -51,6 +51,39 @@
             ReferencedContainer = "container:MacGPBlocks.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-"
+            isEnabled = "NO">
+         </CommandLineArgument>
+      </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "path/to/runtime/ended/with/slash/"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/minimal/"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_STARTUP_FILE"
+            value = "startup.rb"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/gp-082/"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/new-morphic/"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <AdditionalOptions>
          <AdditionalOption
             key = "NSZombieEnabled"
