@@ -10,6 +10,7 @@ const watcher = chokidar.watch(watchedSrcs, {
     persistent: true,
 });
 
+process.env.GP_RUNTIME_DIR = `${watchedSrcs.replace(/\*+$/, '')}`;
 
 let command;
 const changeObserver = () => {
