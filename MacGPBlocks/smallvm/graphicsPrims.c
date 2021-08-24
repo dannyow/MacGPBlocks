@@ -15,8 +15,7 @@
 // Note: Although SDL2 officially supports textures as large as 8192x8192, I got
 // crashes, long pauses, and other strange behavior with textures larger than about
 // 5000x5000. The conservative limit below appears to be safe, at least on a MacBook Pro.
-//#define MAX_TEXTURE_SIZE 2048
-#define MAX_TEXTURE_SIZE 8192
+#define MAX_TEXTURE_SIZE 4096
 
 static int initialized = false;
 SDL_Window *window = NULL; // used by events.c
@@ -220,7 +219,7 @@ void createOrUpdateOffscreenBitmap(int createFlag) {
 
 		// Create offscreen texture
 		screenTexture = SDL_CreateTexture(
-			renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, w, h);
+			renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
 		if (!screenTexture) printf("Could not create offscreen texture");
 	} else {
 		screenBitmap = SDL_GetWindowSurface(window);
@@ -254,7 +253,7 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
 	}
 	closeWindow();
 
-#ifdef MAC
+#if defined(MAC) || defined(RPI)
 	#define USE_RENDERER true
 #endif
 
@@ -289,13 +288,13 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
 	// Note: On some platforms (e.g. running Windows in VMWare on a Mac), the temporary texture
 	// must be a STREAMING texture. On other platforms (e.g. Mac Powerbook Pro with Radeon GPU)
 	// it must be a TARGET texture. Here, we try both and use the one that works.
-	tmpTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE);
+	tmpTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE);
 	int onePixel = 0;
 	SDL_Rect r = {0, 0, 1, 1};
 	int err = SDL_UpdateTexture(tmpTexture, &r, &onePixel, 4);
 	if (err != 0) {
 		SDL_DestroyTexture(tmpTexture);
-		tmpTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE);
+		tmpTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE);
 	}
 
 	// Clear both buffers
@@ -476,15 +475,8 @@ OBJ primDrawBitmap(int nargs, OBJ args[]) {
 				if (dX > MAX_TEXTURE_SIZE) dX = MAX_TEXTURE_SIZE;
 				SDL_Rect textureR = {0, 0, dX, dY};
 				int srcOffset = (srcY * w) + srcX;
-
-                //printf("textureR %d,%d %d,%d\n", textureR.x, textureR.y, textureR.w, textureR.h);
 				SDL_UpdateTexture(tmpTexture, &textureR, &FIELD(bitmapData, srcOffset), (4 * w));
 				SDL_Rect dstR = {dstX, dstY, dX, dY};
-                //printf("dstR  %d,%d %d,%d\n",  dstR.x, dstR.y, dstR.w, dstR.h);
-                dstR.x = dstR.x < 0 ?  0 :dstR.x;
-                dstR.y = dstR.y < 0 ?  0 :dstR.y;
-                //printf(">-dstR  %d,%d %d,%d\n",  dstR.x, dstR.y, dstR.w, dstR.h);
-
 				SDL_RenderCopy(renderer, tmpTexture, &textureR, &dstR);
 				dstX += MAX_TEXTURE_SIZE;
 			}
@@ -1059,71 +1051,34 @@ OBJ primSetCursor(int nargs, OBJ args[]) {
 }
 
 // ***** Graphics Primitive Lookup *****
-// USE_MINIMAL_GRAPHICS_PRMITIVIES flag limits the number of graphics primitives that really do something
-#ifdef USE_MINIMAL_GRAPHICS_PRMITIVIES
-
-OBJ primNoOp(int nargs, OBJ args[]) {
-    return nilObj;
-}
-
- PrimEntry graphicsPrimList[] = {
- {"-----", NULL, "Graphics: Windows"},
- {"openWindow",         primOpenWindow,                "Open the graphics window. Arguments: [width height tryRetinaFlag title]"},
- {"closeWindow",        primCloseWindow,            "Close the graphics window."},
- {"clearBuffer",        primClearWindowBuffer,        "Clear the offscreen window buffer to a color. Ex. clearBuffer (color 255 0 0); flipBuffer"},
- {"showTexture",        primNoOp,            "Draw the given texture. Draw to window buffer if dstTexture is nil. Arguments: dstTexture srcTexture [x y alpha xScale yScale rotationDegrees flip blendMode clipRect]"},
- {"flipBuffer",         primFlipWindowBuffer,        "Flip the onscreen and offscreen window buffers to make changes visible."},
- {"windowSize",         primWindowSize,                "Return an array containing the width and height of the window in logical and physical (high resolution) pixels."},
- {"setFullScreen",      primSetFullScreen,            "Set full screen mode. Argument: fullScreenFlag"},
- {"setWindowTitle",     primSetWindowTitle,            "Set the graphics window title to the given string."},
- {"-----", NULL, "Graphics: Textures"},
- {"createTexture",      primNoOp,            "Create a reference to new texture (a drawing surface in graphics memory). Arguments: width height [fillColor]. Ex. ref = (createTexture 100 100)"},
- {"destroyTexture",     primNoOp,            "Destroy a texture reference. Ex. destroyTexture ref"},
- {"readTexture",        primNoOp,            "Copy the given texture into the given bitmap. Arguments: bitmap texture"},
- {"updateTexture",      primNoOp,            "Update the given texture from the given bitmap. Arguments: texture bitmap"},
- {"-----", NULL, "Graphics: Drawing"},
- {"fillRect",           primFillRect,                "Draw a rectangle. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap color [x y width height blendMode]."},
- {"drawBitmap",         primDrawBitmap,                "Draw a bitmap. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap srcBitmap [x y alpha blendMode clipRect]"},
- {"warpBitmap",         primNoOp,                "Scaled and/or rotate a bitmap. Arguments: dstBitmap srcBitmap [centerX centerY scaleX scaleY rotation]"},
- {"drawLineOnBitmap",   primNoOp,        "Draw a line on a bitmap. Only 1-pixel anti-aliased lines are supported. Arguments: dstBitmap x1 y1 x2 y2 [color lineWidth antiAliasFlag]"},
- {"-----", NULL, "User Input"},
- {"nextEvent",          primNextEvent,                "Return a dictionary representing the next user input event, or nil if the queue is empty."},
- {"getClipboard",       primGetClipboard,            "Return the string from the clipboard, or the empty string if the cliboard is empty."},
- {"setClipboard",       primSetClipboard,            "Set the clipboard to the given string."},
- {"showKeyboard",       primShowKeyboard,            "Show or hide the on-screen keyboard on a touchsceen devices. Argument: true or false."},
- {"setCursor",          primSetCursor,                "Change the mouse pointer appearance. Argument: cursorNumber (0 -> arrow, 3 -> crosshair, 11 -> hand...)"},
- };
-
-#else
 
 PrimEntry graphicsPrimList[] = {
-    {"-----", NULL, "Graphics: Windows"},
-    {"openWindow",      primOpenWindow,                "Open the graphics window. Arguments: [width height tryRetinaFlag title]"},
-    {"closeWindow",     primCloseWindow,            "Close the graphics window."},
-    {"clearBuffer",     primClearWindowBuffer,        "Clear the offscreen window buffer to a color. Ex. clearBuffer (color 255 0 0); flipBuffer"},
-    {"showTexture",     primShowTexture,            "Draw the given texture. Draw to window buffer if dstTexture is nil. Arguments: dstTexture srcTexture [x y alpha xScale yScale rotationDegrees flip blendMode clipRect]"},
-    {"flipBuffer",      primFlipWindowBuffer,        "Flip the onscreen and offscreen window buffers to make changes visible."},
-    {"windowSize",      primWindowSize,                "Return an array containing the width and height of the window in logical and physical (high resolution) pixels."},
-    {"setFullScreen",   primSetFullScreen,            "Set full screen mode. Argument: fullScreenFlag"},
-    {"setWindowTitle",  primSetWindowTitle,            "Set the graphics window title to the given string."},
-    {"-----", NULL, "Graphics: Textures"},
-    {"createTexture",   primCreateTexture,            "Create a reference to new texture (a drawing surface in graphics memory). Arguments: width height [fillColor]. Ex. ref = (createTexture 100 100)"},
-    {"destroyTexture",  primDestroyTexture,            "Destroy a texture reference. Ex. destroyTexture ref"},
-    {"readTexture",     primReadTexture,            "Copy the given texture into the given bitmap. Arguments: bitmap texture"},
-    {"updateTexture",   primUpdateTexture,            "Update the given texture from the given bitmap. Arguments: texture bitmap"},
-    {"-----", NULL, "Graphics: Drawing"},
-    {"fillRect",        primFillRect,                "Draw a rectangle. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap color [x y width height blendMode]."},
-    {"drawBitmap",      primDrawBitmap,                "Draw a bitmap. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap srcBitmap [x y alpha blendMode clipRect]"},
-    {"warpBitmap",      primWarpBitmap,                "Scaled and/or rotate a bitmap. Arguments: dstBitmap srcBitmap [centerX centerY scaleX scaleY rotation]"},
-    {"drawLineOnBitmap",primDrawLineOnBitmap,        "Draw a line on a bitmap. Only 1-pixel anti-aliased lines are supported. Arguments: dstBitmap x1 y1 x2 y2 [color lineWidth antiAliasFlag]"},
-    {"-----", NULL, "User Input"},
-    {"nextEvent",       primNextEvent,                "Return a dictionary representing the next user input event, or nil if the queue is empty."},
-    {"getClipboard",    primGetClipboard,            "Return the string from the clipboard, or the empty string if the cliboard is empty."},
-    {"setClipboard",    primSetClipboard,            "Set the clipboard to the given string."},
-    {"showKeyboard",    primShowKeyboard,            "Show or hide the on-screen keyboard on a touchsceen devices. Argument: true or false."},
-    {"setCursor",       primSetCursor,                "Change the mouse pointer appearance. Argument: cursorNumber (0 -> arrow, 3 -> crosshair, 11 -> hand...)"},
+	{"-----", NULL, "Graphics: Windows"},
+	{"openWindow",		primOpenWindow,				"Open the graphics window. Arguments: [width height tryRetinaFlag title]"},
+	{"closeWindow",		primCloseWindow,			"Close the graphics window."},
+	{"clearBuffer",		primClearWindowBuffer,		"Clear the offscreen window buffer to a color. Ex. clearBuffer (color 255 0 0); flipBuffer"},
+	{"showTexture",		primShowTexture,			"Draw the given texture. Draw to window buffer if dstTexture is nil. Arguments: dstTexture srcTexture [x y alpha xScale yScale rotationDegrees flip blendMode clipRect]"},
+	{"flipBuffer",		primFlipWindowBuffer,		"Flip the onscreen and offscreen window buffers to make changes visible."},
+	{"windowSize",		primWindowSize,				"Return an array containing the width and height of the window in logical and physical (high resolution) pixels."},
+	{"setFullScreen",	primSetFullScreen,			"Set full screen mode. Argument: fullScreenFlag"},
+	{"setWindowTitle",	primSetWindowTitle,			"Set the graphics window title to the given string."},
+	{"-----", NULL, "Graphics: Textures"},
+	{"createTexture",	primCreateTexture,			"Create a reference to new texture (a drawing surface in graphics memory). Arguments: width height [fillColor]. Ex. ref = (createTexture 100 100)"},
+	{"destroyTexture",	primDestroyTexture,			"Destroy a texture reference. Ex. destroyTexture ref"},
+	{"readTexture",		primReadTexture,			"Copy the given texture into the given bitmap. Arguments: bitmap texture"},
+	{"updateTexture",	primUpdateTexture,			"Update the given texture from the given bitmap. Arguments: texture bitmap"},
+	{"-----", NULL, "Graphics: Drawing"},
+	{"fillRect",		primFillRect,				"Draw a rectangle. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap color [x y width height blendMode]."},
+	{"drawBitmap",		primDrawBitmap,				"Draw a bitmap. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap srcBitmap [x y alpha blendMode clipRect]"},
+	{"warpBitmap",		primWarpBitmap,				"Scaled and/or rotate a bitmap. Arguments: dstBitmap srcBitmap [centerX centerY scaleX scaleY rotation]"},
+	{"drawLineOnBitmap", primDrawLineOnBitmap,		"Draw a line on a bitmap. Only 1-pixel anti-aliased lines are supported. Arguments: dstBitmap x1 y1 x2 y2 [color lineWidth antiAliasFlag]"},
+	{"-----", NULL, "User Input"},
+	{"nextEvent",		primNextEvent,				"Return a dictionary representing the next user input event, or nil if the queue is empty."},
+	{"getClipboard",	primGetClipboard,			"Return the string from the clipboard, or the empty string if the cliboard is empty."},
+	{"setClipboard",	primSetClipboard,			"Set the clipboard to the given string."},
+	{"showKeyboard",	primShowKeyboard,			"Show or hide the on-screen keyboard on a touchsceen devices. Argument: true or false."},
+	{"setCursor",		primSetCursor,				"Change the mouse pointer appearance. Argument: cursorNumber (0 -> arrow, 3 -> crosshair, 11 -> hand...)"},
 };
-#endif
 
 PrimEntry* graphicsPrimitives(int *primCount) {
 	*primCount = sizeof(graphicsPrimList) / sizeof(PrimEntry);

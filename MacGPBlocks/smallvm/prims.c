@@ -45,7 +45,7 @@ int getPathToRuntimeLibrary(char *path, int pathSize);
 
 // ***** Version Date and Time *****
 
-static char *versionNum = "v267-dev";
+static char *versionNum = "v268-dev";
 static char *versionDate = __DATE__;
 static char *versionTime = __TIME__;
 
@@ -3585,6 +3585,10 @@ void initPrimitiveTable() {
 	#ifndef NO_CAIRO
 		PrimEntry* vectorPrimitives(int *count);
 		entries = vectorPrimitives(&count);
+		addPrimitiveSet(entries, count);
+
+		PrimEntry* pathPrimitives(int *count);
+		entries = pathPrimitives(&count);
 		addPrimitiveSet(entries, count);
 	#endif // NO_CAIRO
 
