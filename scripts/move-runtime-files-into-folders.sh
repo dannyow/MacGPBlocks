@@ -8,7 +8,7 @@
 
 if [ $# -eq 0 ] 
 then
-    echo "Usage: path/to/runtime/lib/that/will/be/moved/info/folders"
+    echo "Usage: path/to/runtime/lib - files from the given folder WILL BE MOVED"
     exit -1
 fi
 
