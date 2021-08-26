@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		652876A726D5875100EAB15E /* pathPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876A626D5875100EAB15E /* pathPrims.c */; };
 		659F1F6426BC23EB00A0F189 /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4626BC23EB00A0F189 /* parse.c */; };
 		659F1F6526BC23EB00A0F189 /* vectorPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4726BC23EB00A0F189 /* vectorPrims.c */; };
 		659F1F6626BC23EB00A0F189 /* gp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4826BC23EB00A0F189 /* gp.c */; };
@@ -47,6 +48,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		652876A626D5875100EAB15E /* pathPrims.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pathPrims.c; sourceTree = "<group>"; };
 		659F1F2626BC1E6900A0F189 /* MacGPBlocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacGPBlocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		659F1F3126BC1E6B00A0F189 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		659F1F4526BC23EB00A0F189 /* oop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oop.h; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 		659F1F4426BC23C300A0F189 /* smallvm */ = {
 			isa = PBXGroup;
 			children = (
+				652876A626D5875100EAB15E /* pathPrims.c */,
 				659F1F5726BC23EB00A0F189 /* browserPrims.c */,
 				659F1F5626BC23EB00A0F189 /* cache.c */,
 				659F1F5826BC23EB00A0F189 /* cache.h */,
@@ -260,6 +263,7 @@
 				659F1F6D26BC23EC00A0F189 /* serialPortPrims.c in Sources */,
 				659F1F7226BC23EC00A0F189 /* jpegPrims.c in Sources */,
 				659F1F7826BC23EC00A0F189 /* memGC.c in Sources */,
+				652876A726D5875100EAB15E /* pathPrims.c in Sources */,
 				659F1F6F26BC23EC00A0F189 /* socketPrims.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
