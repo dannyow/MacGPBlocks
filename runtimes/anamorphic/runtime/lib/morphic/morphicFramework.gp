@@ -351,6 +351,8 @@ method processMove Hand {
             if (notNil toBeGrabbed) {
               closeUnclickedMenu page toBeGrabbed
               grab this toBeGrabbed
+              lastTouched = nil
+              lastTouchTime = nil
             }
           }
         } else {
@@ -363,8 +365,6 @@ method processMove Hand {
     m = (owner m)
   }
   for oldM oldMorphs {if (and (acceptsEvents oldM) (not (contains currentMorphs oldM))) {handLeave (handler oldM) this}}
-  lastTouched = nil
-  lastTouchTime = nil
 }
 
 method processSwipe Hand xDelta yDelta {
