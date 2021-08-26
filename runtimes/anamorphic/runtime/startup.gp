@@ -8,6 +8,7 @@ to startup {
     // emptyWindow 'Hello!? 👋'
     //blockEditorWithAnimationDemo
     // renderBlock
+    // renderOnlyPrintBlock
     // openSynopsisWindow
     // openClassBrowser
     // howToCallFunction
@@ -75,6 +76,25 @@ to fakeAction args... {
   log (joinStringArray (toArray result))
 }
 
+to renderOnlyPrintBlock {
+    page = (newPage 1000 800)
+    tryRetina = true
+    setDevMode page true
+    setGlobal 'page' page
+    open page tryRetina 'Blocks Editor' 
+
+    // spec described in runtime
+    block =  (blockForSpec  (blockSpecFromStrings 'print' ' ' 'console print _ : _ : ...' 'auto auto auto auto auto auto auto auto auto auto' 'Testing 1, 2, 3') )
+    (expand block)
+    (expand block)
+    (expand block)
+    (expand block)
+    (expand block)
+    addPart page (morph block)
+
+
+    startSteppingSafely page false
+}
 to renderBlock {
     page = (newPage 1000 800)
     tryRetina = true
