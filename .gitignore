@@ -10,3 +10,4 @@
 /webapp/gp_wasm.html
 /webapp/gp_wasm.js
 /webapp/gp_wasm.wasm
+/MacGPBlocks/smallvm/buildEmcc.sh
