@@ -128,7 +128,10 @@ method fixLayout Block {
   space = 3
   vSpace = 3
 
-  break = 450
+  
+  break = 600 //450     // #BlockLayout: where to break the parameters list to new line
+  maxNumberOfArgs = 10  // #BlockLayout: the max number of arguments before breaking layout into new line
+
   lineHeights = (list)
   lines = (list)
   lineArgCount = 0
@@ -146,10 +149,12 @@ method fixLayout Block {
   }
 
   // arrange label parts horizontally and break up into lines
-  breakLineBeforeFirstArg = ((count (argList expression)) >= 5)
+  breakLineBeforeFirstArg = ((count (argList expression)) >= maxNumberOfArgs)
   currentLine = (list)
   for group labelParts {
+    print group
     for each group {
+ print '[' (toString each) ']'
       if (isVisible (morph each)) {
         if (isClass each 'CommandSlot') {
           if (notEmpty currentLine) {
@@ -174,7 +179,7 @@ method fixLayout Block {
 			lineArgCount = 10 // force a line break after first item of block
 		  }
 		  if ('if' == (primName expression)) { lineArgCount = 0 } // never break 'if' blocks
-		  if (and (or (w > (break * scale)) (lineArgCount >= 5)) (notEmpty currentLine)) {
+		  if (and (or (w > (break * scale)) (lineArgCount >= maxNumberOfArgs)) (notEmpty currentLine)) {
 			if (notEmpty currentLine) {
 			  add lines currentLine
 			  add lineHeights h
