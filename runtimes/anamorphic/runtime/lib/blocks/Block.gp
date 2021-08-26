@@ -152,9 +152,7 @@ method fixLayout Block {
   breakLineBeforeFirstArg = ((count (argList expression)) >= maxNumberOfArgs)
   currentLine = (list)
   for group labelParts {
-    print group
     for each group {
- print '[' (toString each) ']'
       if (isVisible (morph each)) {
         if (isClass each 'CommandSlot') {
           if (notEmpty currentLine) {
