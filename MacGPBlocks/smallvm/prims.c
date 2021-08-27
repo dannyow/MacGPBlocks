@@ -3641,6 +3641,12 @@ void initPrimitiveTable() {
 	addPrimitiveSet(entries, count);
 #endif // EMSCRIPTEN
 
+#ifndef EMSCRIPTEN
+    PrimEntry* networkPrimitives(int *count);
+    entries = networkPrimitives(&count);
+    addPrimitiveSet(entries, count);
+#endif
+
 	initPrimitiveDictionary();
 }
 
