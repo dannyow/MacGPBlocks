@@ -86,6 +86,10 @@ static void processRequestQueue() {
     int messagesLeft = -1;
     CURLMsg *msg = NULL;
 
+    if (!curlMultiHandle) {
+        return;
+    }
+
     curl_multi_perform(curlMultiHandle, &stillAlive);
     while ((msg = curl_multi_info_read(curlMultiHandle, &messagesLeft))) {
         if (msg->msg == CURLMSG_DONE) {
@@ -196,10 +200,6 @@ static OBJ primFetchRequestResult(int nargs, OBJ args[]) {
     // find the fetch request with the given id
     int i = indexOfRequestWithID(id);
     if (i < 0) return falseObj;  // could not find request with id; report as failure
-
-    if (!curlMultiHandle) {
-        return falseObj;
-    }
 
     OBJ result = nilObj;
     if (IN_PROGRESS == requests[i].status) {
