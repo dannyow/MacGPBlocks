@@ -61,7 +61,7 @@ size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *use
     return realSize;
 }
 
-static int findRequestWithID(int requestID) {
+static int indexOfRequestWithID(int requestID) {
     int i;
     for (i = 0; i < MAX_REQUESTS; i++) {
         if (requests[i].id == requestID) break;
@@ -95,7 +95,7 @@ static void processRequestQueue() {
             CURL *curl = msg->easy_handle;
             curl_easy_getinfo(curl, CURLINFO_PRIVATE, &requestID);
 
-            int requestIndex = findRequestWithID(requestID);
+            int requestIndex = indexOfRequestWithID(requestID);
             if (requestIndex > -1) {
                 assert(CANCELLED == requests[requestIndex].status || IN_PROGRESS == requests[requestIndex].status);
 
@@ -194,7 +194,7 @@ static OBJ primFetchRequestResult(int nargs, OBJ args[]) {
     int id = obj2int(args[0]);
 
     // find the fetch request with the given id
-    int i = findRequestWithID(id);
+    int i = indexOfRequestWithID(id);
     if (i < 0) return falseObj;  // could not find request with id; report as failure
 
     if (!curlMultiHandle) {
@@ -229,7 +229,7 @@ static OBJ primCancelRequest(int nargs, OBJ args[]) {
     int id = obj2int(args[0]);
 
     // find the fetch request with the given id
-    int i = findRequestWithID(id);
+    int i = indexOfRequestWithID(id);
     if (i < 0) return nilObj;
 
     printf("🔴 primCancelRequest with ID: %d (%d)\n", id, i);
