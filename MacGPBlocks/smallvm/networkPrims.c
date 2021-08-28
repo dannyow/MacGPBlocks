@@ -56,8 +56,6 @@ size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *use
     request->byteCount += realSize;
     request->data[request->byteCount] = 0;
 
-    //    printf("*** Data: %ul %ul\n", size, nmemb);
-
     return realSize;
 }
 
