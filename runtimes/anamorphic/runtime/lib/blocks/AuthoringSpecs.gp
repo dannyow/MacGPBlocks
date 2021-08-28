@@ -503,6 +503,8 @@ Line 2')
 	  (array 'r' 'httpGet'			'http host _ : path _ : port _' 'str str num' 'tinlizzie.org' '/' '80')
 	  (array 'r' 'jsonStringify'	'json encode _' 'obj')
 	  (array 'r' 'jsonParse'		'json decode _' 'str')
+      (array 'r' 'restGet'			'get url _ : headers _ : timeout _' 'str auto num' 'https://jsonplaceholder.typicode.com/todos/1' nil nil)
+
 
 	'Table'
 	  (array 'r' 'importTableFromFile'	'table from file _ : has headings _ : delimiter _' 'str bool str' 'fileName' true ',')
