@@ -35,7 +35,7 @@ typedef struct {
     char *data;
 } FetchRequest;
 
-#define MAX_REQUESTS 1000
+#define MAX_REQUESTS 100
 FetchRequest requests[MAX_REQUESTS];
 
 static int nextFetchID = 100;
