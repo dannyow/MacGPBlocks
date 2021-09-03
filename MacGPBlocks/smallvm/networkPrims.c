@@ -185,7 +185,7 @@ static OBJ primStartRequest(int nargs, OBJ args[]) {
 // Returns a BinaryData object on success, false on failure, and nil when fetch is still in progress.
 static OBJ primFetchRequestResult(int nargs, OBJ args[]) {
     // https://stackoverflow.com/questions/43662072/anyway-to-avoid-to-loop-monitor-multi-handle-in-libcurl
-    //  https://stackoverflow.com/questions/48644383/libcurl-progress-callback-not-working-with-multi
+    // https://stackoverflow.com/questions/48644383/libcurl-progress-callback-not-working-with-multi
     // https://stackoverflow.com/questions/24413806/libuv-event-loop-and-libcurl
 
     // First process requests from libcurl queue
@@ -245,7 +245,7 @@ static PrimEntry networkPrimList[] = {
     {"-----", NULL, "Network: HTTP/HTTPS"},
     {"startRequest", primStartRequest, "Start downloading the contents of a URL. Return an id that can be used to get the result. Argument: urlString"},
     {"fetchRequestResult", primFetchRequestResult, "Return the result of the fetch operation with the given id: a BinaryData object (success), false (failure), or nil if in progress. Argument: id"},
-    {"cancelRequest", primCancelRequest, "Cancel the request with the given id. Argument: id"},
+    {"cancelRequest", primCancelRequest, "Cancel the request (if exists) with the given id. Argument: id"},
 };
 
 PrimEntry *networkPrimitives(int *primCount) {
