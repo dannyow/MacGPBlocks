@@ -645,6 +645,8 @@ method fixLayout Debugger {
   scale = (global 'scale')
   bnds = (bounds (morph window))
   setPosition (morph reasonText) ((left bnds) + (10 * scale)) ((top bnds) + (25 * scale))
+
+  fixLayout codeFrame
 }
 
 method fixButtonLayout Debugger {
