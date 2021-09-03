@@ -289,7 +289,7 @@ method buildUI Debugger {
   buttonsPane = (newBox nil (gray 250) nil nil false false)
   addPart morph (morph buttonsPane)
 
-  reasonText = (newText 'Reason:' 'Arial' (scale * fontSize))
+  reasonText = (newText 'Reason:' 'Arial Bold' (scale * fontSize))
   setEditRule reasonText 'static'
   addPart morph (morph reasonText)
 
@@ -320,7 +320,7 @@ method buildUI Debugger {
   addPart morph (morph valueFrame)
 
   setMinExtent morph (scale * 400) (scale * 300)
-  setExtent morph (scale * 450) (scale * 500)
+  setExtent morph (scale * 600) (scale * 500)
   setPosition morph 5 (scale * 25)
   if (notNil (global 'page')) {
 	setXCenter morph (hCenter (bounds (morph (global 'page'))))
