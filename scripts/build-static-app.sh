@@ -36,7 +36,7 @@ gcc -std=c99 -Wall -O3 -mmacosx-version-min=10.14 \
 -D NO_CAMERA \
 -I/usr/local/include/SDL2 \
 cache.c dict.c embeddedFS.c events.c gp.c graphicsPrims.c interp.c jpegPrims.c mem.c memGC.c oop.c parse.c \
-pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c textAndFontPrims.c vectorPrims.c \
+pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c textAndFontPrims.c vectorPrims.c networkPrims.c \
 /usr/local/lib/libSDL2.a \
 /usr/local/lib/libcairo.a \
 /usr/local/lib/libpixman-1.a \
@@ -45,7 +45,7 @@ pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c t
 /usr/local/lib/libjpeg.a \
 /usr/local/lib/libpng.a \
 /usr/local/lib/libportaudio.a \
--lz -lbz2 -liconv -lexpat \
+-lz -lbz2 -liconv -lexpat -lcurl \
 -framework AudioToolBox -framework AudioUnit -framework Carbon -framework Cocoa \
 -framework CoreAudio -framework CoreMIDI -framework ForceFeedback -framework IOKit \
 -framework CoreVideo -framework Metal -framework MediaPlayer -framework GameController \
