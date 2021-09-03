@@ -3,7 +3,7 @@
 #
 # First, build and install the libraries GP depends on:
 #
-#	cairo, pixman, freetype, fontconfig, libjpeg, libpng, SDL2, and portaudio
+#	brew install SDL2 cairo pixman freetype fontconfig libjpeg libpng portaudio
 #
 # Then run this shell script to build and link.
 #
