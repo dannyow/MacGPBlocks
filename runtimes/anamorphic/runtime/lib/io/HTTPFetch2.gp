@@ -1,4 +1,6 @@
 
+// HTTPFetch2
+
 
 // The timeout here means _also_ how long we want to wait to get the received data 
 // Fetching large file over a slow network plus and a short timeout => no chance for success
@@ -26,4 +28,36 @@ to restGet url headers timeout {
     // ???: what should be returned in there is a timeout?
     //return '' // for now to match request failed result from above...
     return nil
+}
+
+to restfulPOST url headers body timeout {
+	if (isNil headers) { headers = (list)}
+
+	(add header 'Content-Type: application/json')
+	// convert body to json
+	//cache-control: no-cache
+	//accept: */*
+	bodyJSONString = '{}'
+
+	httpFetch 'POST' url (headers toArray) bodyJSONString timeout
+}
+
+to httpPOST url headers body timeout {
+	if (isNil headers) { headers = (list)}
+
+	// convert body to query parameters
+	(add headers 'Content-Type: application/x-www-form-urlencoded')
+}
+to httpGET url headers body timeout {
+	// convert body to query parameters
+}
+
+to httpFetch method url headersArray body timeout {
+	if (isNil method) { method = 'GET' }
+	if (isNil url) { return nil }
+	if (isNil headersArray) { headersArray = (array)}
+	if (isNil body) { body = (dictionary) }
+	if (isNil timeout) { timeout = 2000 }
+
+
 }

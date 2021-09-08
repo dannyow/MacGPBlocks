@@ -3642,8 +3642,8 @@ void initPrimitiveTable() {
 #endif // EMSCRIPTEN
 
 #ifndef EMSCRIPTEN
-    PrimEntry* networkPrimitives(int *count);
-    entries = networkPrimitives(&count);
+    PrimEntry* httpPrimitives(int *count);
+    entries = httpPrimitives(&count);
     addPrimitiveSet(entries, count);
 #endif
 

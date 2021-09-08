@@ -105,9 +105,12 @@ static void processRequestQueue() {
                     cleanupRequestAtIndex(requestIndex);
                 } else if (msgCode == CURLE_OK) {
                     requests[requestIndex].status = DONE;
+                    //https://stackoverflow.com/a/291006/12675559
+                    // TODO: request.responseStatus = curl_easy_strerror(msgCode)
                 } else {
                     printf("error on requestID: %d %s\n", requestID, curl_easy_strerror(msgCode));
                     requests[requestIndex].status = FAILED;
+                    // TODO: request.errorMessage = curl_easy_strerror(msgCode)
                 }
             }
 
@@ -241,14 +244,14 @@ static OBJ primCancelRequest(int nargs, OBJ args[]) {
     return nilObj;
 }
 
-static PrimEntry networkPrimList[] = {
+static PrimEntry httpPrimList[] = {
     {"-----", NULL, "Network: HTTP/HTTPS"},
     {"startRequest", primStartRequest, "Start downloading the contents of a URL. Return an id that can be used to get the result. Argument: urlString"},
     {"fetchRequestResult", primFetchRequestResult, "Return the result of the fetch operation with the given id: a BinaryData object (success), false (failure), or nil if in progress. Argument: id"},
     {"cancelRequest", primCancelRequest, "Cancel the request (if exists) with the given id. Argument: id"},
 };
 
-PrimEntry *networkPrimitives(int *primCount) {
-    *primCount = sizeof(networkPrimList) / sizeof(PrimEntry);
-    return networkPrimList;
+PrimEntry *httpPrimitives(int *primCount) {
+    *primCount = sizeof(httpPrimList) / sizeof(PrimEntry);
+    return httpPrimList;
 }

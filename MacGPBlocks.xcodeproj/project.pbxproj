@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		652876A726D5875100EAB15E /* pathPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876A626D5875100EAB15E /* pathPrims.c */; };
-		652876B426D806F000EAB15E /* networkPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876B326D806F000EAB15E /* networkPrims.c */; };
+		652876B426D806F000EAB15E /* httpPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876B326D806F000EAB15E /* httpPrims.c */; };
 		659F1F6426BC23EB00A0F189 /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4626BC23EB00A0F189 /* parse.c */; };
 		659F1F6526BC23EB00A0F189 /* vectorPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4726BC23EB00A0F189 /* vectorPrims.c */; };
 		659F1F6626BC23EB00A0F189 /* gp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4826BC23EB00A0F189 /* gp.c */; };
@@ -50,7 +50,7 @@
 
 /* Begin PBXFileReference section */
 		652876A626D5875100EAB15E /* pathPrims.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pathPrims.c; sourceTree = "<group>"; };
-		652876B326D806F000EAB15E /* networkPrims.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = networkPrims.c; sourceTree = "<group>"; };
+		652876B326D806F000EAB15E /* httpPrims.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = httpPrims.c; sourceTree = "<group>"; };
 		659F1F2626BC1E6900A0F189 /* MacGPBlocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacGPBlocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		659F1F3126BC1E6B00A0F189 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		659F1F4526BC23EB00A0F189 /* oop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oop.h; sourceTree = "<group>"; };
@@ -164,7 +164,7 @@
 				659F1F5426BC23EB00A0F189 /* soundPrims.c */,
 				659F1F6326BC23EB00A0F189 /* textAndFontPrims.c */,
 				659F1F4726BC23EB00A0F189 /* vectorPrims.c */,
-				652876B326D806F000EAB15E /* networkPrims.c */,
+				652876B326D806F000EAB15E /* httpPrims.c */,
 			);
 			path = smallvm;
 			sourceTree = "<group>";
@@ -257,7 +257,7 @@
 				659F1F6E26BC23EC00A0F189 /* sha2.c in Sources */,
 				659F1F6A26BC23EC00A0F189 /* graphicsPrims.c in Sources */,
 				659F1F7726BC23EC00A0F189 /* interp.c in Sources */,
-				652876B426D806F000EAB15E /* networkPrims.c in Sources */,
+				652876B426D806F000EAB15E /* httpPrims.c in Sources */,
 				659F1F7026BC23EC00A0F189 /* prims.c in Sources */,
 				659F1F6726BC23EB00A0F189 /* dict.c in Sources */,
 				659F1F7626BC23EC00A0F189 /* embeddedFS.c in Sources */,
