@@ -4,7 +4,7 @@ to startup {
     setGlobal 'skipQuitConfirmation' true
 
     //listFunctions
-    defaulProjectEditor
+    //defaulProjectEditor
     // emptyWindow 'Hello!? 👋'
     //blockEditorWithAnimationDemo
     // renderBlock
@@ -13,6 +13,9 @@ to startup {
     // openClassBrowser
     // howToCallFunction
 
+    // runHttpFetchTests
+
+    (run (new 'HTTPFetchTestSuite'))
 }
 
 to listFunctions {
