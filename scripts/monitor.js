@@ -2,6 +2,7 @@ const chokidar = require('chokidar');
 const { exec } = require('child_process');
 
 let watchedSrcs = './runtimes/anamorphic/**';
+
 // App is copied to .build as post-action in xcode (see post-action-copy-app-for-monitor.sh)
 const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
 
@@ -11,6 +12,7 @@ if (process.env.GP_RUNTIME_DIR) {
     process.env.GP_RUNTIME_DIR = `${watchedSrcs.replace(/\*+$/, '')}`;
 }
 
+console.log('\x1b[33m%s\x1b[0m', `Monitoring path: >${watchedSrcs}<`, '\x1b[0m'); // yellow
 
 const watcher = chokidar.watch(watchedSrcs, {
     // ignored: /(^|[\/\\])\../, // ignore dotfiles
@@ -20,8 +22,7 @@ const watcher = chokidar.watch(watchedSrcs, {
 
 let command;
 const changeObserver = () => {
-    // if (stats) console.log(`File ${path} changed size to ${stats.size}`);
-    // console.log('path was changed', path);
+    console.log('\x1b[33m%s\x1b[0m', 'Path was changed, restarting...', '\x1b[0m'); // yellow
 
     if (command) {
         command.kill();
