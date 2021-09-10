@@ -10,11 +10,13 @@ method run HTTPFetchTestSuite {
 
 	tm = (newTaskMaster)
 
-	addTask tm (newTask (action 'testEncodeBody' this ))
-	addTask tm (newTask (action 'testGet' this ))
-	addTask tm (newTask (action 'testGetWithHeaders' this ))
-	addTask tm (newTask (action 'testGETBody' this ))
-	addTask tm (newTask (action 'testPOSTBody' this ))
+	// addTask tm (newTask (action 'testEncodeBody' this ))
+	// addTask tm (newTask (action 'testGet' this ))
+	addTask tm (newTask (action 'testRestfulGet' this ))
+	
+	// addTask tm (newTask (action 'testGetWithHeaders' this ))
+	// addTask tm (newTask (action 'testGETBody' this ))
+	// addTask tm (newTask (action 'testPOSTBody' this ))
 
 	stepAllTasksUntilDone tm
 }
@@ -67,6 +69,19 @@ method testGETBody HTTPFetchTestSuite {
 	body = (array (list 'id' 1) (array 'id' 2))
 	result = (httpGET url nil body)
 	assert (count (jsonParse (toString result))) 2 'an array of ids: ''/posts?id=1&id=2'' size'
+}
+
+method testRestfulGet HTTPFetchTestSuite {
+	url = (join baseURL '/users') // localhost or https://jsonplaceholder.typicode.com/users
+	users = (restfulGET url)
+
+	assertNotEqual result '' 'request to test URL has failed'
+
+	assert (isClass users 'List') true '(isClass users ''List'')'
+	assert (count users) 10
+
+	assert (at (at users 1) 'id') 1 'first user has id==1'
+	assert (at (last users ) 'id') 10 'last user has id==10'
 }
 
 method testGet HTTPFetchTestSuite {

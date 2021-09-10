@@ -1,6 +1,19 @@
 
 // HTTPFetch2
 
+to restfulGET url headers body timeout {
+	if (isNil headers) { headers = (list)}
+
+	(add headers 'Content-Type: application/json')
+	
+	result = (httpFetch url 'GET' headers (encodeBody body ) timeout)
+	if (isClass result 'BinaryData') {
+		return (jsonParse (toString result))
+	}
+
+	return result
+}
+
 to httpPOST url headers body timeout {
 	if (or (isNil headers) (isEmpty headers)) { headers = (list)}
 
