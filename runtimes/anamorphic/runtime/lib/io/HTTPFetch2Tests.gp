@@ -4,22 +4,22 @@
 
 defineClass HTTPFetchTestSuite baseURL
 method run HTTPFetchTestSuite {
-	setGlobal 'verboseHTTPFetch' true
-	baseURL = 'http://localhost:3117'
-	// baseURL = 'https://jsonplaceholder.typicode.com'
+	setGlobal 'verboseHTTPFetch' false
+	// baseURL = 'http://localhost:3117'
+	baseURL = 'https://jsonplaceholder.typicode.com'
 
 	tm = (newTaskMaster)
 
-	// addTask tm (newTask (action 'testEncodeBodyWithDictionary' this ))
-	// addTask tm (newTask (action 'testEncodeBodyWithListAndArray' this ))
+	addTask tm (newTask (action 'testEncodeBodyWithDictionary' this ))
+	addTask tm (newTask (action 'testEncodeBodyWithListAndArray' this ))
 	
-	// addTask tm (newTask (action 'testGET' this ))
-	// addTask tm (newTask (action 'testGETWithParams' this ))
+	addTask tm (newTask (action 'testGET' this ))
+	addTask tm (newTask (action 'testGETWithParams' this ))
 	addTask tm (newTask (action 'testGETWithHeaders' this ))
 
-	// addTask tm (newTask (action 'testRestfulGET' this ))
+	addTask tm (newTask (action 'testRestfulGET' this ))
 	
-	// addTask tm (newTask (action 'testPOSTBody' this ))
+	addTask tm (newTask (action 'testPOST' this ))
 
 	stepAllTasksUntilDone tm
 }
@@ -36,7 +36,7 @@ method testRestfulGET HTTPFetchTestSuite {
 	assert (at (last users ) 'id') 10 'last user has id==10'
 }
 
-method testPOSTBody HTTPFetchTestSuite {
+method testPOST HTTPFetchTestSuite {
 	url = (join baseURL '/users')
 
 	// POST /users just like regular HTML form (no nested dictionaries in body)
@@ -44,14 +44,14 @@ method testPOSTBody HTTPFetchTestSuite {
 	atPut body 'name' 'Freddy Krueger'
 	// $: curl --request POST --header "Content-Type: application/x-www-form-urlencoded" ${URL}/users --data 'name=Freddy%20Krueger'
 	headers = nil // aka use the default content-type, just like html form 'application/x-www-form-urlencoded' 
-	httpPOST url headers body
+	result = (httpPOST url headers body)
 
-	// $: curl --request POST --header "Content-Type: application/x-www-form-urlencoded" --header "X-Testing: value" ${URL}/users --data 'name=Freddy%20Krueger'
-	headers = (list 'X-Testing: value')
-	httpPOST url headers body
+	assertNotEqual result '' 'request to test URL has failed'
+	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
+	newUser = (jsonParse (toString result))
+	assert (at newUser 'name') (at body 'name') 'attribute name with value: '
 
-
-	// use json
+	// POST to /users with json (nested dictionaries)
 	body = (dictionary)
 	atPut body 'name' 'Freddy Krueger'
 	address = (dictionary)
@@ -60,8 +60,15 @@ method testPOSTBody HTTPFetchTestSuite {
 
 	headers = (list 'Content-Type:application/json')
 	// $: curl --request POST --header "Content-Type:application/json" ${URL}/users --data '{"name": "Freddy Krueger", "address": {"street": "Elm Street"}}'
-	httpPOST url headers body
+	result = (httpPOST url headers body)
+
+	assertNotEqual result '' 'request to test URL has failed'
+	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
+	newUser = (jsonParse (toString result))
+	assert (at newUser 'name') (at body 'name') 'attribute name with value: '
+	assert (at (at newUser 'address') 'street') (at (at body 'address') 'street') 'attribute name with value: '
 }
+
 method testGETWithParams HTTPFetchTestSuite {
 	url = (join baseURL '/posts')
 
@@ -85,6 +92,7 @@ method testGETWithParams HTTPFetchTestSuite {
 	result = (httpGET url nil params)
 	assert (count (jsonParse (toString result))) 2 'an array of ids: ''/posts?id=1&id=2'' size'
 }
+
 method testGET HTTPFetchTestSuite {
 	url = (join baseURL '/users') // localhost or https://jsonplaceholder.typicode.com/users
 	result = (httpGET url)
@@ -104,16 +112,15 @@ method testGET HTTPFetchTestSuite {
 // Note headers test requires a special endpoint available only in the local server version
 // For details look at json-server.js
 method testGETWithHeaders HTTPFetchTestSuite {
-
 	isJsonServerOnLocalhost = (not (isNil (findSubstring 'localhost' baseURL)))
-	assert isJsonServerOnLocalhost true 'headers test method requires a json-server on localhost' 
 
 	if (not isJsonServerOnLocalhost) {
+		print 'headers test method requires a json-server on localhost, SKIPPING' 
 		return
 	}
 	url = (join baseURL '/headers')
 
-	result = (httpGET url nil)
+	result = (httpGET url nil nil 200)
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
 	result = (jsonParse (toString result))
@@ -124,7 +131,6 @@ method testGETWithHeaders HTTPFetchTestSuite {
 	)
 	result = (httpGET url notAllHeaders)
 	assert (at (jsonParse (toString result)) 'error') true 'not ALL required headers were given, error='
-
 	
 	expectedHeaders = (list 
 	'Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l'
@@ -133,9 +139,6 @@ method testGETWithHeaders HTTPFetchTestSuite {
 
 	result = (httpGET  url expectedHeaders)
 	assert (at (jsonParse (toString result)) 'error') false 'all headers where given error='
-
-
-	// TODO
 }
 method testEncodeBodyWithListAndArray HTTPFetchTestSuite {
 	valueIsConvertedToString = (list (list 'id' 1) (list 'id' '2'))

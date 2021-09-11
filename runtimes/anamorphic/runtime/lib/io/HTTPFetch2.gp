@@ -62,20 +62,24 @@ to httpFetch url method headers postBody timeout {
 	if (isNil url) { 
 		error 'URL is empty'
 	 }
-	if (isNil headers) { headers = (list)}
-	//if (isNil body) { body = (dictionary) }
+	if (not (isNil headers)) { headers = (toArray headers)}
+	if (not (isNil postBody)) { postBody = (toString postBody)}
+
+	if (not (isNil timeout)) { timeout = (toInteger timeout)}
+
 	if (isNil timeout) { timeout = 2000 }
 
 	if ((global 'verboseHTTPFetch') == true) {
 		print '🤙 ' method '
 	url:' url '
 	headers:' headers '
-	body:' body
+	body:' body '
+	timeout:' timeout
 	}
 
 //https://stackoverflow.com/questions/11281117/x-www-form-urlencoded-vs-json-http-post
 
-	requestID = (startRequest url method (toArray headers) (toString postBody) timeout)
+	requestID = (startRequest url method headers postBody timeout)
 	start = (msecsSinceStart)
 	while (((msecsSinceStart) - start) < timeout) {
 		result = (fetchRequestResult requestID)
