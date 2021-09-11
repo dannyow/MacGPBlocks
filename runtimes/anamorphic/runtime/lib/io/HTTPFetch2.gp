@@ -6,7 +6,7 @@ to restfulGET url parameters headers timeout {
 
 	(add headers 'Content-Type: application/json')
 	
-	result = (httpFetch url 'GET' headers (encodeBody parameters false) timeout)
+	result = (httpGET url parameters headers timeout)
 	if (isClass result 'BinaryData') {
 		return (jsonParse (toString result))
 	}
@@ -14,10 +14,10 @@ to restfulGET url parameters headers timeout {
 	return result
 }
 
-to httpGET url params headers timeout {
+to httpGET url parameters headers timeout {
 	
 	fetchURL = url
-	queryString = (encodeBody params false)
+	queryString = (encodeBody parameters false)
 
 	if (not (isNil queryString)) {
 		fetchURL = (joinStrings (list url '?' queryString))
