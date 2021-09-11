@@ -7,7 +7,7 @@
 //
 defineClass HTTPFetchTestSuite baseURL
 method run HTTPFetchTestSuite jsonServerURL {
-	setGlobal 'verboseHTTPFetch' false
+	// setGlobal 'verboseHTTPFetch' true
 
 	baseURL = jsonServerURL
 
@@ -18,7 +18,8 @@ method run HTTPFetchTestSuite jsonServerURL {
 	tm = (newTaskMaster)
 
 	addTask tm (newTask (action 'testEncodeBodyWithDictionary' this ))
-	addTask tm (newTask (action 'testEncodeBodyWithListAndArray' this ))
+	addTask tm (newTask (action 'testEncodeBodyWithListsAndArrays' this ))
+	addTask tm (newTask (action 'testEncodeBodyWithNestedListsAndArrays' this ))
 	
 	addTask tm (newTask (action 'testGET' this ))
 	addTask tm (newTask (action 'testGETWithParams' this ))
@@ -31,19 +32,6 @@ method run HTTPFetchTestSuite jsonServerURL {
 	stepAllTasksUntilDone tm
 }
 
-method testRestfulGET HTTPFetchTestSuite {
-	url = (join baseURL '/posts') // localhost or https://jsonplaceholder.typicode.com/users
-	posts = (restfulGET url)
-
-	assertNotEqual result '' 'request to test URL has failed'
-
-	assert (isClass posts 'List') true '(isClass users ''List'')'
-	assert (count posts) 100
-
-	assert (at (at posts 1) 'id') 1 'first user has id==1'
-	assert (at (last posts ) 'id') 100 'last user has id==100'
-}
-
 method testPOST HTTPFetchTestSuite {
 	url = (join baseURL '/users')
 
@@ -52,7 +40,7 @@ method testPOST HTTPFetchTestSuite {
 	atPut body 'name' 'Freddy Krueger'
 	// $: curl --request POST --header "Content-Type: application/x-www-form-urlencoded" ${URL}/users --data 'name=Freddy%20Krueger'
 	headers = nil // aka use the default content-type, just like html form 'application/x-www-form-urlencoded' 
-	result = (httpPOST url headers body)
+	result = (httpPOST url body headers)
 
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
@@ -68,13 +56,27 @@ method testPOST HTTPFetchTestSuite {
 
 	headers = (list 'Content-Type:application/json')
 	// $: curl --request POST --header "Content-Type:application/json" ${URL}/users --data '{"name": "Freddy Krueger", "address": {"street": "Elm Street"}}'
-	result = (httpPOST url headers body)
+	result = (httpPOST url body headers)
 
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
 	newUser = (jsonParse (toString result))
 	assert (at newUser 'name') (at body 'name') 'attribute name with value: '
 	assert (at (at newUser 'address') 'street') (at (at body 'address') 'street') 'attribute name with value: '
+}
+
+
+method testRestfulGET HTTPFetchTestSuite {
+	url = (join baseURL '/posts') // localhost or https://jsonplaceholder.typicode.com/users
+	posts = (restfulGET url)
+
+	assertNotEqual result '' 'request to test URL has failed'
+
+	assert (isClass posts 'List') true '(isClass users ''List'')'
+	assert (count posts) 100
+
+	assert (at (at posts 1) 'id') 1 'first user has id==1'
+	assert (at (last posts ) 'id') 100 'last user has id==100'
 }
 
 method testGETWithParams HTTPFetchTestSuite {
@@ -84,7 +86,7 @@ method testGETWithParams HTTPFetchTestSuite {
 	// $: curl --request GET  ${URL}/posts\?q=voluptatem%20laborum
 	params = (dictionary)
 	atPut params 'q' 'voluptatem laborum'
-	result = (httpGET url nil params)
+	result = (httpGET url params)
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
 	assert (count (jsonParse (toString result))) 1 '''/posts?q=voluptatem%20laborum'' size'
@@ -92,12 +94,12 @@ method testGETWithParams HTTPFetchTestSuite {
 	// GET /posts?id=1&id=2
 	// $: curl --request GET  ${URL}/posts\?id=1\&id=2
 	params = (list (list 'id' 1) (list 'id' 2))
-	result = (httpGET url nil params)
+	result = (httpGET url params)
 	assert (count (jsonParse (toString result))) 2 'a list of ids: ''/posts?id=1&id=2'' size'
 
 	// GET /posts?id=1&id=2
 	params = (array (list 'id' 1) (array 'id' 2))
-	result = (httpGET url nil params)
+	result = (httpGET url params)
 	assert (count (jsonParse (toString result))) 2 'an array of ids: ''/posts?id=1&id=2'' size'
 }
 
@@ -116,7 +118,6 @@ method testGET HTTPFetchTestSuite {
 	assert (at (at posts 1) 'id') 1 'first user has id==1'
 	assert (at (last posts ) 'id') 100 'last user has id==100'
 }
-
 // Note headers test requires a special endpoint available only in the local server version
 // For details look at json-server.js
 method testGETWithHeaders HTTPFetchTestSuite {
@@ -137,7 +138,7 @@ method testGETWithHeaders HTTPFetchTestSuite {
 	notAllHeaders = (list 
 	'Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l'
 	)
-	result = (httpGET url notAllHeaders)
+	result = (httpGET url nil notAllHeaders)
 	assert (at (jsonParse (toString result)) 'error') true 'not ALL required headers were given, error='
 	
 	expectedHeaders = (list 
@@ -145,30 +146,49 @@ method testGETWithHeaders HTTPFetchTestSuite {
 	'User-Agent: HTTPFetchTestSuite'
 	)
 
-	result = (httpGET  url expectedHeaders)
+	result = (httpGET  url nil expectedHeaders)
 	assert (at (jsonParse (toString result)) 'error') false 'all headers where given error='
 }
-method testEncodeBodyWithListAndArray HTTPFetchTestSuite {
+method testEncodeBodyWithListsAndArrays HTTPFetchTestSuite {
+	valueIsConvertedToString = (list 'id' 1 'id' '2')
+	assert (encodeBody valueIsConvertedToString false) 'id=1&id=2' '(list ''id'' 1 ''id'' ''2'')'
+
+	toShortList = (list)
+	assert (encodeBody toShortList false) nil '(list)'
+	
+	parameterWithoutValue = (list 'id')
+	assert (encodeBody parameterWithoutValue false) nil
+
+	evenNumberOfElements = (list 'id' 1 'a' 2 'b' 3 4)
+	assert (encodeBody evenNumberOfElements false) 'id=1&a=2&b=3'
+	
+
+	bodyAsArray = (array 'id' 1 'id' 2)
+	assert (encodeBody bodyAsArray false) 'id=1&id=2' 'array id=1&id=2'
+}
+
+method testEncodeBodyWithNestedListsAndArrays HTTPFetchTestSuite {
 	valueIsConvertedToString = (list (list 'id' 1) (list 'id' '2'))
 	assert (encodeBody valueIsConvertedToString false) 'id=1&id=2' 'list id=1&id=2'
 
 	toShortList = (list)
-	assert (encodeBody toShortList false) nil
+	assert (encodeBody toShortList false) nil 'toShortList'
 	
 	parameterWithoutValue = (list (list 'id'))
-	assert (encodeBody parameterWithoutValue false) nil
+	assert (encodeBody parameterWithoutValue false) nil 'parameterWithoutValue'
 
-	onlyFirst2Counts = (list (list 'id' 1 2 3 4))
-	assert (encodeBody onlyFirst2Counts false) 'id=1'
+	nestedListsAreFlattened = (list (list 'id' 1 2 3 4) (array 'f o' nil 'b o' nil))
+	// nestedListsAreFlattened flattened looks like: (list ['id' 1] [2 3] [4 'f o'] [nil 'b o'] nil) 
+	assert (encodeBody nestedListsAreFlattened false) 'id=1&2=3&4=f%20o&nil=b%20o' 'nestedListsAreFlattened'
 	
-	paramNameHasToBeString = (list (list 1 2 3 4))
-	assert (encodeBody paramNameHasToBeString false) nil
+	toString = (list (list 1 2 3 4 5))
+	assert (encodeBody toString false) '1=2&3=4' 'toString'
 
 	bodyAsList = (list (list 'id' 1) (list 'id' 2))
-	assert (encodeBody bodyAsList false) 'id=1&id=2' 'list id=1&id=2'
+	assert (encodeBody bodyAsList false) 'id=1&id=2' 'bodyAsList'
 
 	bodyAsArray = (array (list 'id' 1) (list 'id' 2))
-	assert (encodeBody bodyAsArray false) 'id=1&id=2' 'array id=1&id=2'
+	assert (encodeBody bodyAsArray false) 'id=1&id=2' 'bodyAsArray'
 
 }
 method testEncodeBodyWithDictionary HTTPFetchTestSuite {

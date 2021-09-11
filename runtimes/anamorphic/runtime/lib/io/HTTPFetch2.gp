@@ -1,12 +1,12 @@
 
 // HTTPFetch2
 
-to restfulGET url headers body timeout {
+to restfulGET url parameters headers timeout {
 	if (isNil headers) { headers = (list)}
 
 	(add headers 'Content-Type: application/json')
 	
-	result = (httpFetch url 'GET' headers (encodeBody body ) timeout)
+	result = (httpFetch url 'GET' headers (encodeBody parameters false) timeout)
 	if (isClass result 'BinaryData') {
 		return (jsonParse (toString result))
 	}
@@ -14,7 +14,7 @@ to restfulGET url headers body timeout {
 	return result
 }
 
-to httpGET url headers params timeout {
+to httpGET url params headers timeout {
 	
 	fetchURL = url
 	queryString = (encodeBody params false)
@@ -26,7 +26,7 @@ to httpGET url headers params timeout {
 	return (httpFetch fetchURL 'GET' headers nil timeout)
 }
 
-to httpPOST url headers body timeout {
+to httpPOST url body headers timeout {
 	if (or (isNil headers) (isEmpty headers)) { headers = (list)}
 
 	encodeAsJSON = false
@@ -62,10 +62,13 @@ to httpFetch url method headers postBody timeout {
 	if (isNil url) { 
 		error 'URL is empty'
 	 }
+	if (isEmpty headers) { headers = nil}
 	if (not (isNil headers)) { headers = (toArray headers)}
+
+	if (isEmpty postBody) { postBody = nil}
 	if (not (isNil postBody)) { postBody = (toString postBody)}
 
-	if (not (isNil timeout)) { timeout = (toInteger timeout)}
+	if (<= timeout 0) { timeout = nil}
 
 	if (isNil timeout) { timeout = 2000 }
 
@@ -100,7 +103,7 @@ to httpFetch url method headers postBody timeout {
 // When called with a dictionary, only entries that are strings value are used.
 // When called with list/array, expects at least 2 values per parameter, name is string, value is converted to string.
 to encodeBody body asJSON {
-	if (isNil body){
+	if (or (isNil body) (isEmpty body)){
 		return nil
 	}  
 
@@ -125,11 +128,18 @@ to encodeBody body asJSON {
 			}
 		}
 	} else {
-		for param (toList body) {
-			if (and ( > (count param) 1) (isClass (at param 1) 'String') ) {
-				v = (toString (at param 2))
-				nameValuePair = (list (at param 1) '=' (percentEncode v))
+		nameValuePair = (list)
+		for element (toList (flattened body)) {	
+			item = (percentEncode (toString element))
+			len = (count nameValuePair)
+			if (len == 1) {
+				(add nameValuePair '=')
+				(add nameValuePair item)
+
 				(add encoded (joinStrings nameValuePair))
+				nameValuePair = (list)
+			} (len == 0) {
+				(add nameValuePair item)
 			}
   		}
 	}
