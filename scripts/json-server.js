@@ -11,8 +11,31 @@ const router = jsonServer.router(db);
 const middlewares = jsonServer.defaults({ logger: true, bodyParser: true, noCors: false });
 
 server.use(middlewares);
-server.get('/echo', (req, res) => {
-    res.jsonp(req.query);
+
+// Special endpoint to test headers, expects those two entries in headers:
+// {
+//        authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l',
+//        'user-agent': 'HTTPFetchTestSuite',
+// }
+// on error returns 400 with error json
+server.get('/headers', (req, res) => {
+    const expectedHeaders = {
+        authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l',
+        'user-agent': 'HTTPFetchTestSuite',
+    };
+    const errorMsg = { error: true, message: 'no expected headers found', expectedHeaders };
+    const successMsg = { error: false, success: true };
+
+    const foundeHadersCnt = Object.keys(req.headers)
+        .map(n => n.toLowerCase())
+        .map(n => expectedHeaders[n] != null)
+        .reduce((acc, v) => (v === true ? (acc + 1) : acc), 0);
+
+    if (foundeHadersCnt === Object.keys(expectedHeaders).length) {
+        return res.send(successMsg);
+    }
+
+    return res.status(400).send(errorMsg);
 });
 
 server.use(jsonServer.bodyParser);
