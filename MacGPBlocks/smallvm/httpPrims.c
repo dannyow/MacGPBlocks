@@ -14,14 +14,13 @@
 #include "mem.h"
 #include "interp.h"
 
-/*
- Test files:
- * Very large (26M) https://raw.githubusercontent.com/json-iterator/test-data/master/large-file.json
- * Large (660k) https://data.cityofnewyork.us/api/views/82rt-zc4y/rows.json
- */
+
+#define MAX_PARALLEL 10     // number of simultaneous transfers
+#define MAX_REQUESTS 100    // pool of simultaneous requests
+#define DEFAULT_REQUEST_TIMEOUT 10000
+#define DEFAULT_USER_AGENT "gp-blocks"
 
 static CURLM *curlMultiHandle = NULL;
-#define MAX_PARALLEL 10 /* number of simultaneous transfers */
 
 typedef enum { IN_PROGRESS,
                DONE,
@@ -35,9 +34,7 @@ typedef struct {
     char *data;
 } FetchRequest;
 
-#define MAX_REQUESTS 100
-#define DEFAULT_REQUEST_TIMEOUT 10000
-#define DEFAULT_USER_AGENT "gp-blocks"
+
 
 FetchRequest requests[MAX_REQUESTS];
 
@@ -123,71 +120,6 @@ static void processRequestQueue() {
     }
 }
 
-static OBJ primStartRequestORG(int nargs, OBJ args[]) {
-    if (nargs < 1) return notEnoughArgsFailure();
-    OBJ url = args[0];
-    if (NOT_CLASS(url, StringClass)) return primFailed("First argument must be a string");
-
-    if (curlMultiHandle == NULL) {
-        curl_global_init(CURL_GLOBAL_ALL);
-        curlMultiHandle = curl_multi_init();
-
-        if (!curlMultiHandle) {
-            return primFailed("Could not initate network connection");
-        }
-
-        /* Limit the amount of simultaneous connections curl should allow: */
-        curl_multi_setopt(curlMultiHandle, CURLMOPT_MAXCONNECTS, (long)MAX_PARALLEL);
-    }
-
-    // find an unused request
-    int i;
-
-    for (i = 0; i < MAX_REQUESTS; i++) {
-        if (!requests[i].id) {
-            requests[i].id = nextFetchID++;
-            requests[i].status = IN_PROGRESS;
-            requests[i].data = NULL;
-            requests[i].byteCount = 0;
-
-            break;
-        }
-    }
-    if (i >= MAX_REQUESTS) return nilObj;  // no free request slots (unlikely)
-
-    CURL *curl = curl_easy_init();
-    if (!curl) {
-        return primFailed("Could not initate network connection");
-    }
-
-    //https://curl.se/libcurl/c/curl_easy_setopt.html
-    curl_easy_setopt(curl, CURLOPT_URL, obj2str(url));
-
-    struct curl_slist *headers = NULL;
-    /* Remove a header curl would otherwise add by itself */
-    // https://curl.se/libcurl/c/httpcustomheader.html
-    // headers = curl_slist_append(headers, "Accept:");
-    headers = curl_slist_append(headers, "Accept: application/json");
-    headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    curl_easy_setopt(curl, CURLOPT_URL, obj2str(url));
-    //    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fetchWriteDataCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&requests[i]);
-    curl_easy_setopt(curl, CURLOPT_PRIVATE, requests[i].id);
-    //    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1000L);
-
-    curl_multi_add_handle(curlMultiHandle, curl);
-    printf("🟢 Request ready to run for URL: %s ID: %d (at: %d)\n", obj2str(url), requests[i].id, i);
-
-    return int2obj(requests[i].id);
-}
-
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
     if (requestIndex >= MAX_REQUESTS) return nilObj;
 
@@ -199,7 +131,7 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
             return primFailed("Could not initate network connection");
         }
 
-        /* Limit the amount of simultaneous connections curl should allow: */
+        // Limit the amount of simultaneous connections curl should allow:
         curl_multi_setopt(curlMultiHandle, CURLMOPT_MAXCONNECTS, (long)MAX_PARALLEL);
     }
 
