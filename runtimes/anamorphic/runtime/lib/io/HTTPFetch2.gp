@@ -57,7 +57,7 @@ to httpPOST url headers body timeout {
 // Headers is expected to be a list of strings or nil.
 // Each string will be used as a request header entry as-is, as such string should contain both key and value.
 // Example: 'Pragma: no-cache' or 'Authorization: Bearer mF_9.B5f-4.1JqM'
-to httpFetch url method headers body timeout {
+to httpFetch url method headers postBody timeout {
 	if (isNil method) { method = 'GET' }
 	if (isNil url) { 
 		error 'URL is empty'
@@ -75,7 +75,7 @@ to httpFetch url method headers body timeout {
 
 //https://stackoverflow.com/questions/11281117/x-www-form-urlencoded-vs-json-http-post
 
-	requestID = (startRequest url method (toArray headers) (toString body) timeout)
+	requestID = (startRequest url method (toArray headers) (toString postBody) timeout)
 	start = (msecsSinceStart)
 	while (((msecsSinceStart) - start) < timeout) {
 		result = (fetchRequestResult requestID)
