@@ -14,6 +14,18 @@ to restfulGET url headers body timeout {
 	return result
 }
 
+to httpGET url headers params timeout {
+	
+	fetchURL = url
+	queryString = (encodeBody params false)
+
+	if (not (isNil queryString)) {
+		fetchURL = (joinStrings (list url '?' queryString))
+	}
+
+	return (httpFetch fetchURL 'GET' headers nil timeout)
+}
+
 to httpPOST url headers body timeout {
 	if (or (isNil headers) (isEmpty headers)) { headers = (list)}
 
@@ -41,9 +53,6 @@ to httpPOST url headers body timeout {
 	return (httpFetch url 'POST' headers (encodeBody body encodeAsJSON) timeout)
 }
 
-to httpGET url headers body timeout {
-	return (httpFetch url 'GET' headers (encodeBody body ) timeout)
-}
 
 // Headers is expected to be a list of strings or nil.
 // Each string will be used as a request header entry as-is, as such string should contain both key and value.
@@ -83,30 +92,44 @@ to httpFetch url method headers body timeout {
     return nil
 }
 
-// Converts input dictionary into string encoded for use in request.
-// Returns string or nil (on nil imput or empty/not convertable dictionary)
-// When converting to a query string, only entries from body that value is string will be used.
+// Converts 'body' into a string encoded and ready for use in a request.
+//
+// Returns string or nil, throws error on wront type of input.
+// When called with a dictionary, only entries that are strings value are used.
+// When called with list/array, expects at least 2 values per parameter, name is string, value is converted to string.
 to encodeBody body asJSON {
-	if (not (or (isNil body) (isClass body 'Dictionary'))) {
-		error 'Data to encode must be a dictionary or nil'
-  	}
 	if (isNil body){
 		return nil
 	}  
 
+	if (not (or (isClass body 'Dictionary') (isClass body 'List') (isClass body 'Array'))) {
+		error 'Data to encode must be a dictionary/list/array or nil'
+  	}
+	
 	if (true == asJSON) {
 		return (jsonStringify body)
 	}
-	
+
 	encoded = (list)
-	values = (values body)
-	keys = (keys body)
-	for i (count keys) {
-		v = (at values i)
-		if (isClass v 'String'){
-			nameValuePair = (list (at keys i) '=' (percentEncode v))
-			(add encoded (joinStrings nameValuePair))
+
+	if (isClass body 'Dictionary') {
+		values = (values body)
+		keys = (keys body)
+		for i (count keys) {
+			v = (at values i)
+			if (isClass v 'String'){
+				nameValuePair = (list (at keys i) '=' (percentEncode v))
+				(add encoded (joinStrings nameValuePair))
+			}
 		}
+	} else {
+		for param (toList body) {
+			if (and ( > (count param) 1) (isClass (at param 1) 'String') ) {
+				v = (toString (at param 2))
+				nameValuePair = (list (at param 1) '=' (percentEncode v))
+				(add encoded (joinStrings nameValuePair))
+			}
+  		}
 	}
 
 	if (isEmpty encoded) {
