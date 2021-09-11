@@ -101,7 +101,7 @@ to httpFetch url method headers postBody timeout {
 //
 // Returns string or nil, throws error on wront type of input.
 // When called with a dictionary, only entries that are strings value are used.
-// When called with list/array, expects at least 2 values per parameter, name is string, value is converted to string.
+// When called with list or array, for non json encoding, body is first flattened and then splitted into name, value pairs. 
 to encodeBody body asJSON {
 	if (or (isNil body) (isEmpty body)){
 		return nil

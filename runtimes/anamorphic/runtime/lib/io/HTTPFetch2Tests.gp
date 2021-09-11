@@ -1,9 +1,9 @@
 
 // HTTPFetch2 Tests
 // By default uses https://jsonplaceholder.typicode.com as test server.
-// The localhost version can be launched with yarn --cwd=./scripts run start:json-server
+// The localhost version of json-server can be launched with yarn --cwd=./scripts run start:json-server
 //
-// To run with local server:  (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')
+// To run tests agains local server:  (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')
 //
 defineClass HTTPFetchTestSuite baseURL
 method run HTTPFetchTestSuite jsonServerURL {
