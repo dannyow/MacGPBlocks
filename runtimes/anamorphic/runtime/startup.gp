@@ -31,8 +31,8 @@ to projectEditorWithHTTP {
     specs = (initialize (new 'AuthoringSpecs'))
     addSpecs specs (array
 	' *** HTTP'
-        (array 'r' 'httpGET'   'fetch from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
-        (array 'r' 'restfulGET'   'fetch JSON from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
+        (array 'r' 'httpGET'   'read from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
+        (array 'r' 'restfulGET'   'read JSON from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
 
         (array 'r' 'httpPOST' 'post to URL _  body _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
         (array ' ' 'httpPOST' 'write to URL _  body _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
