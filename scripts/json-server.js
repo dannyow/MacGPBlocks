@@ -27,9 +27,8 @@ server.get('/headers', (req, res) => {
     const successMsg = { error: false, success: true };
 
     const foundeHadersCnt = Object.keys(req.headers)
-        .map(n => n.toLowerCase())
-        .map(n => expectedHeaders[n] != null)
-        .reduce((acc, v) => (v === true ? (acc + 1) : acc), 0);
+        .map(name => expectedHeaders[name.toLowerCase()] === req.headers[name])
+        .reduce((acc, v) => (v === true ? acc + 1 : acc), 0);
 
     if (foundeHadersCnt === Object.keys(expectedHeaders).length) {
         return res.send(successMsg);
