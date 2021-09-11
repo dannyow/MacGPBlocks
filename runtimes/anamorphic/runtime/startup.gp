@@ -15,7 +15,9 @@ to startup {
 
     // runHttpFetchTests
 
-    (run (new 'HTTPFetchTestSuite'))
+    (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')
+    // (run (new 'HTTPFetchTestSuite'))
+
 }
 
 to listFunctions {

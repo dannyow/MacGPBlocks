@@ -1,12 +1,19 @@
 
-// HTTPFetch2
-//https://github.com/typicode/json-server#plural-routes
-
+// HTTPFetch2 Tests
+// By default uses https://jsonplaceholder.typicode.com as test server.
+// The localhost version can be launched with yarn --cwd=./scripts run start:json-server
+//
+// To run with local server:  (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')
+//
 defineClass HTTPFetchTestSuite baseURL
-method run HTTPFetchTestSuite {
+method run HTTPFetchTestSuite jsonServerURL {
 	setGlobal 'verboseHTTPFetch' false
-	// baseURL = 'http://localhost:3117'
-	baseURL = 'https://jsonplaceholder.typicode.com'
+
+	baseURL = jsonServerURL
+
+	if (isNil baseURL) {
+		baseURL = 'https://jsonplaceholder.typicode.com'
+	}
 
 	tm = (newTaskMaster)
 
@@ -23,17 +30,18 @@ method run HTTPFetchTestSuite {
 
 	stepAllTasksUntilDone tm
 }
+
 method testRestfulGET HTTPFetchTestSuite {
-	url = (join baseURL '/users') // localhost or https://jsonplaceholder.typicode.com/users
-	users = (restfulGET url)
+	url = (join baseURL '/posts') // localhost or https://jsonplaceholder.typicode.com/users
+	posts = (restfulGET url)
 
 	assertNotEqual result '' 'request to test URL has failed'
 
-	assert (isClass users 'List') true '(isClass users ''List'')'
-	assert (count users) 10
+	assert (isClass posts 'List') true '(isClass users ''List'')'
+	assert (count posts) 100
 
-	assert (at (at users 1) 'id') 1 'first user has id==1'
-	assert (at (last users ) 'id') 10 'last user has id==10'
+	assert (at (at posts 1) 'id') 1 'first user has id==1'
+	assert (at (last posts ) 'id') 100 'last user has id==100'
 }
 
 method testPOST HTTPFetchTestSuite {
@@ -94,19 +102,19 @@ method testGETWithParams HTTPFetchTestSuite {
 }
 
 method testGET HTTPFetchTestSuite {
-	url = (join baseURL '/users') // localhost or https://jsonplaceholder.typicode.com/users
+	url = (join baseURL '/posts') // localhost or https://jsonplaceholder.typicode.com/users
 	result = (httpGET url)
 
 	assertNotEqual result '' 'request to test URL has failed'
 
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
-	users = (jsonParse (toString result))
+	posts = (jsonParse (toString result))
 
-	assert (isClass users 'List') true '(isClass users ''List'')'
-	assert (count users) 10
+	assert (isClass posts 'List') true '(isClass users ''List'')'
+	assert (count posts) 100
 
-	assert (at (at users 1) 'id') 1 'first user has id==1'
-	assert (at (last users ) 'id') 10 'last user has id==10'
+	assert (at (at posts 1) 'id') 1 'first user has id==1'
+	assert (at (last posts ) 'id') 100 'last user has id==100'
 }
 
 // Note headers test requires a special endpoint available only in the local server version
