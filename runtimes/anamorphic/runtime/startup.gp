@@ -33,22 +33,9 @@ to projectEditorWithHTTP {
 	' *** HTTP'
         (array 'r' 'httpGET'   'fetch from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
         (array 'r' 'restfulGET'   'fetch JSON from URL _ : parameters _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
-        // (array 'r' 'asyncGetDataFromURL2'   'collect data from URL _ : filter with  _ : use config _ : start on page _ end on page _ page size _' 'auto auto auto num num num' 'http://localhost:8080/' '.?' nil 0 nil nil)
-        // (array ' ' 'sendWithLimit'   'broadcast _ with _ : using limit of _ req / sec' 'str.listOfThings auto num ' 'event name' nil 1)
 
-        // (array 'r' 'getDataFromURL'   'get data from _ using: _' 'str auto' 'http://localhost:8080/' (dictionary) )
-
-        // // process data from URL: with callback using configuration
-        // // get data from _ then process with _ : using configuration _
-        // // collect data from _
-        // (array ' ' 'asyncGetDataFromURL'   'get data from _ then process with _ : using configuration _' 'str str auto' 'http://localhost:8080/' 'func' nil )
-
-
-        // (array ' ' 'customMe'   'forever _' 'cmd')
-        // (array ' ' 'command'       'funcComm _' 'cmd')
-        // (array 'h' 'funcH'       'funcHead _' 'cmd')
-        // (array ' ' 'fun_'       'funcSP _' 'cmd')
-
+        (array 'r' 'httpPOST' 'post to URL _  body _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
+        (array ' ' 'httpPOST' 'write to URL _  body _ : headers _ : timeout _' 'str auto auto num' 'https://jsonplaceholder.typicode.com/users' nil nil nil)
     )
     setGlobal 'flatBlocks' true
     setGlobal 'authoringSpecs' specs
