@@ -4,7 +4,7 @@ to assert v1 v2 message {
      print 'ok'
      return true
   } else {
-     print message v2 'expected, but got' v1
+     print '🛑' message v2 'expected, but got' v1
      return false
   }
 }
@@ -15,7 +15,7 @@ to assertNotEqual v1 v2 message {
      print 'ok'
      return true
   } else {
-     print message v2 'not expected'
+     print '🛑' message v2 'not expected'
      return false
   }
 }
