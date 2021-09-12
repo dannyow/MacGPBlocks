@@ -7,7 +7,7 @@
 //
 defineClass HTTPFetchTestSuite baseURL
 method run HTTPFetchTestSuite jsonServerURL {
-	// setGlobal 'verboseHTTPFetch' true
+	setGlobal 'verboseHTTPFetch' true
 
 	baseURL = jsonServerURL
 
@@ -40,8 +40,8 @@ method testPOST HTTPFetchTestSuite {
 	atPut body 'name' 'Freddy Krueger'
 	// $: curl --request POST --header "Content-Type: application/x-www-form-urlencoded" ${URL}/users --data 'name=Freddy%20Krueger'
 	headers = nil // aka use the default content-type, just like html form 'application/x-www-form-urlencoded' 
-	result = (httpPOST url body headers)
-
+	result = (httpPOST url body headers 5000)
+print 'result:' (toString result)
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
 	newUser = (jsonParse (toString result))
@@ -72,11 +72,11 @@ method testRestfulGET HTTPFetchTestSuite {
 
 	assertNotEqual result '' 'request to test URL has failed'
 
-	assert (isClass posts 'List') true '(isClass users ''List'')'
+	assert (isClass posts 'List') true 'testRestfulGET/(isClass users ''List'')'
 	assert (count posts) 100
 
-	assert (at (at posts 1) 'id') 1 'first user has id==1'
-	assert (at (last posts ) 'id') 100 'last user has id==100'
+	assert (at (at posts 1) 'id') 1 'testRestfulGET/first user has id==1'
+	assert (at (last posts ) 'id') 100 'testRestfulGET/last user has id==100'
 }
 
 method testGETWithParams HTTPFetchTestSuite {
