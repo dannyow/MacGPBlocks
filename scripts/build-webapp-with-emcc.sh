@@ -42,6 +42,7 @@ emcc -std=gnu99 -Wall -O3 \
     -s TOTAL_MEMORY=209715200 \
     -s ALLOW_MEMORY_GROWTH=0 \
     -s LLD_REPORT_UNDEFINED \
+    -s FETCH=1 \
     --memory-init-file 0 \
     -s WASM=1 \
     browserPrims.c cache.c dict.c embeddedFS.c events.c gp.c interp.c mem.c memGC.c oop.c parse.c \
