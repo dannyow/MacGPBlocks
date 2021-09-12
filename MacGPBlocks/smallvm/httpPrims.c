@@ -38,13 +38,14 @@ typedef struct {
     FetchStatus status;
     int byteCount;
     char *data;
-    const char **headers;
+    void *headers;
 } FetchRequest;
 
 FetchRequest requests[MAX_REQUESTS];
 
 static int nextFetchID = 100;
 
+static void freeRequestHeaders(void* headers);
 
 static int indexOfRequestWithID(int requestID) {
     int i;
@@ -62,6 +63,9 @@ static void cleanupRequestAtIndex(int index) {
     if (requests[index].data) {
         free(requests[index].data);
     }
+
+    freeRequestHeaders(requests[index].headers);
+
     requests[index].data = NULL;
     requests[index].byteCount = 0;
 }
@@ -192,6 +196,11 @@ size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *use
     return realSize;
 }
 
+static void freeRequestHeaders(void* headers) {
+    if (headers){
+        curl_slist_free_all(headers);
+    }
+}
 
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
     if (requestIndex >= MAX_REQUESTS) return nilObj;
@@ -231,6 +240,12 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
             headers = curl_slist_append(headers, obj2str(obj));
         }
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        request->headers = headers;
+
+#warning LEAKING on purpose
+//        int headersCount = 10;
+//        const char** headersBuff = (const char**)malloc((headersCount + 1) * sizeof(const char*));
+//        request->headers = headersBuff;
     }
 
     if (postBodyString){
