@@ -21,12 +21,10 @@
 #include "mem.h"
 #include "interp.h"
 
-
-#define MAX_PARALLEL 10     // number of simultaneous transfers
-#define MAX_REQUESTS 100    // pool of simultaneous requests
+#define MAX_PARALLEL 10   // number of simultaneous transfers
+#define MAX_REQUESTS 100  // pool of simultaneous requests
 #define DEFAULT_REQUEST_TIMEOUT 10000
 #define DEFAULT_USER_AGENT "gp-blocks"
-
 
 typedef enum { IN_PROGRESS,
                DONE,
@@ -45,7 +43,7 @@ FetchRequest requests[MAX_REQUESTS];
 
 static int nextFetchID = 100;
 
-static void freeRequestHeaders(void* headers);
+static void freeRequestHeaders(void *headers);
 
 static int indexOfRequestWithID(int requestID) {
     int i;
@@ -66,36 +64,14 @@ static void cleanupRequestAtIndex(int index) {
 
     freeRequestHeaders(requests[index].headers);
 
+    requests[index].headers = NULL;
     requests[index].data = NULL;
     requests[index].byteCount = 0;
 }
 
-
 #ifdef EMSCRIPTEN
-//static void fetchDoneCallback(void *arg, void *buf, int bufSize) {
-//    FetchRequest *req = arg;
-//    req->data = malloc(bufSize);
-//    if (req->data) memmove(req->data, buf, bufSize);
-//    req->byteCount = bufSize;
-//    req->status = DONE;
-//}
-//
-//static void fetchErrorCallback(void *arg) {
-//    FetchRequest *req = arg;
-//    printf("Fetch error, id = %d\n", req->id);
-//    req->status = FAILED;
-//}
-//static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout){
-//    if (requestIndex >= MAX_REQUESTS) return nilObj;
-//    FetchRequest *request = &requests[requestIndex];
-//
-//    emscripten_async_wget_data(url, request, fetchDoneCallback, fetchErrorCallback);
-//    printf("🛫 Request ready to start for URL: >%s< ID: [%d] (at: [%d])\n", url, request->id, requestIndex);
-//
-//    return int2obj(request->id);
-//}
-static void fetchDoneCallback(emscripten_fetch_t *fetch) {
 
+static void fetchDoneCallback(emscripten_fetch_t *fetch) {
     FetchRequest *request = fetch->userData;
     printf("🛬 Request finished. URL: >%s< ID: [%d] \n", fetch->url, request->id);
 
@@ -110,13 +86,13 @@ static void fetchDoneCallback(emscripten_fetch_t *fetch) {
 static void fetchErrorCallback(emscripten_fetch_t *fetch) {
     FetchRequest *req = fetch->userData;
     printf("Fetch error, id = %d URL: >%s< status: %d\n", req->id, fetch->url, fetch->status);
+
     req->status = FAILED;
 
     emscripten_fetch_close(fetch);
 }
 
-static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout){
-
+static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
     if (requestIndex >= MAX_REQUESTS) return nilObj;
 
     FetchRequest *request = &requests[requestIndex];
@@ -128,32 +104,52 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
     attr.timeoutMSecs = timeout;
 
-////    static const char* custom_headers[3] = {"***KEY\0", "value\0", 0};
-//    if (headersArray != nilObj) {
-//        int count = WORDS(headersArray);
-//        for (int i = 0; i < count; i++) {
-//            OBJ obj = FIELD(headersArray, i);
-//            char *headerNameValue = obj2str(obj);
-              // Find first ':' character and split string into two separate strings name and value
-//
-//
-//        }
-//
-////        static const char* custom_headers[3] = {"Content-Type", "application/x-www-form-urlencoded", 0};
-////        attr.requestHeaders = custom_headers;
-//        //https://github.com/emscripten-core/emscripten/blob/main/system/include/emscripten/fetch.h
-//        char *h = "Content-Type:application/x-www-form-urlencoded";
-//
-//        //https://github.com/7rooper/UE4_TressFX/blob/77014c43165243f30a69f1d3ef95f9edca379198/Engine/Extras/ThirdPartyNotUE/emsdk/emscripten/1.38.31/system/lib/fetch/emscripten_fetch.cpp#L114
-//        int headersCount = 2;
-//        const char** headers = (const char**)malloc((headersCount + 1) * sizeof(const char*));
-//
-//
-//        attr.requestHeaders = headers;
-//        request->headers = headers;
-//    }
+    if (headersArray != nilObj) {
+        int count = WORDS(headersArray);
 
-    if( postBodyString ){
+        // Two slots per header (name, value) plus end marker
+        int headersSize = ((count * 2) + 1) * sizeof(const char *);
+        const char **headers = (const char **)malloc(headersSize);
+
+        if (headers) {
+            memset(headers, 0, headersSize);
+
+            int headersIndx = 0;
+            for (int i = 0; i < count; i++) {
+                OBJ obj = FIELD(headersArray, i);
+                char *headerNameValue = obj2str(obj);
+
+                //Find first ':' character and split string into two separate strings name and value
+                char *colonAt = strchr(headerNameValue, ':');
+                if (colonAt) {
+                    long nameLen = (colonAt - headerNameValue);
+                    char *name = malloc(nameLen + 1);
+                    if (!name) {
+                        freeRequestHeaders(headers);
+                        headers = NULL;
+                        break;
+                    }
+                    memcpy(name, headerNameValue, nameLen);
+                    name[nameLen] = 0L;
+                    headers[headersIndx++] = name;
+
+                    long valueLen = strlen(headerNameValue) - nameLen;
+                    char *value = malloc(valueLen + 1);
+                    if (!value) {
+                        freeRequestHeaders(headers);
+                        headers = NULL;
+                        break;
+                    }
+                    memcpy(value, (colonAt + 1), valueLen);  // copy also zero marker from the orignal headerNameValue
+                    headers[headersIndx++] = value;
+                }
+            }
+            attr.requestHeaders = headers;
+            request->headers = headers;
+        }
+    }
+
+    if (postBodyString) {
         attr.requestData = postBodyString;
         attr.requestDataSize = strlen(postBodyString);
     }
@@ -169,8 +165,26 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
 
     return int2obj(request->id);
 }
-static void processRequestQueue() {
 
+static void freeRequestHeaders(void *headers) {
+    if (!headers) {
+        return;
+    }
+
+    const char **headerList = headers;
+    int index = 0;
+    while (true) {
+        const char *headerItem = headerList[index++];
+        if (headerItem) {
+            free((void *)headerItem);
+        } else {
+            break;
+        }
+    }
+    free(headers);
+}
+
+static void processRequestQueue() {
 }
 
 #else
@@ -194,12 +208,6 @@ size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *use
     request->data[request->byteCount] = 0;
 
     return realSize;
-}
-
-static void freeRequestHeaders(void* headers) {
-    if (headers){
-        curl_slist_free_all(headers);
-    }
 }
 
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
@@ -229,7 +237,7 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
     //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, DEFAULT_USER_AGENT); //can overwritten by headers
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, DEFAULT_USER_AGENT);  //can overwritten by headers
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout);
 
     if (headersArray != nilObj) {
@@ -241,14 +249,9 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
         }
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         request->headers = headers;
-
-#warning LEAKING on purpose
-//        int headersCount = 10;
-//        const char** headersBuff = (const char**)malloc((headersCount + 1) * sizeof(const char*));
-//        request->headers = headersBuff;
     }
 
-    if (postBodyString){
+    if (postBodyString) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postBodyString);
     }
 
@@ -260,6 +263,13 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
     printf("🛫 Request ready to start for URL: >%s< ID: [%d] (at: [%d])\n", url, request->id, requestIndex);
 
     return int2obj(request->id);
+}
+
+static void freeRequestHeaders(void *headers) {
+    if (!headers) {
+        return;
+    }
+    curl_slist_free_all(headers);
 }
 
 static void processRequestQueue() {
@@ -303,10 +313,7 @@ static void processRequestQueue() {
     }
 }
 
-
 #endif
-
-
 
 // Returns request id on success, nil when there is no free slots for a new request (unlikely)
 static OBJ primStartRequest(int nargs, OBJ args[]) {
@@ -353,7 +360,6 @@ static OBJ primStartRequest(int nargs, OBJ args[]) {
 
 // Returns a BinaryData object on success, false on failure, and nil when fetch is still in progress.
 static OBJ primFetchRequestResult(int nargs, OBJ args[]) {
-
     // First use this opportunity to process requests from the queue (for libcurl)
     processRequestQueue();
 
