@@ -9,7 +9,12 @@
 #include <string.h>
 #include <assert.h> /* assert() */
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#else
 #include <curl/curl.h>
+#endif
 
 #include "mem.h"
 #include "interp.h"
@@ -20,7 +25,6 @@
 #define DEFAULT_REQUEST_TIMEOUT 10000
 #define DEFAULT_USER_AGENT "gp-blocks"
 
-static CURLM *curlMultiHandle = NULL;
 
 typedef enum { IN_PROGRESS,
                DONE,
@@ -34,30 +38,10 @@ typedef struct {
     char *data;
 } FetchRequest;
 
-
-
 FetchRequest requests[MAX_REQUESTS];
 
 static int nextFetchID = 100;
 
-size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *userData) {
-    size_t realSize = size * nmemb;
-    FetchRequest *request = (FetchRequest *)userData;
-
-    char *ptr = realloc(request->data, request->byteCount + realSize + 1);
-    if (!ptr) {
-        /* out of memory! */
-        printf("not enough memory (realloc returned NULL)\n");
-        return 0;
-    }
-
-    request->data = ptr;
-    memcpy(&(request->data[request->byteCount]), buffer, realSize);
-    request->byteCount += realSize;
-    request->data[request->byteCount] = 0;
-
-    return realSize;
-}
 
 static int indexOfRequestWithID(int requestID) {
     int i;
@@ -79,46 +63,57 @@ static void cleanupRequestAtIndex(int index) {
     requests[index].byteCount = 0;
 }
 
-static void processRequestQueue() {
-    int stillAlive = 1;
-    int messagesLeft = -1;
-    CURLMsg *msg = NULL;
 
-    if (!curlMultiHandle) {
-        return;
-    }
-
-    curl_multi_perform(curlMultiHandle, &stillAlive);
-    while ((msg = curl_multi_info_read(curlMultiHandle, &messagesLeft))) {
-        if (msg->msg == CURLMSG_DONE) {
-            int requestID;
-
-            CURLcode msgCode = msg->data.result;
-            CURL *curl = msg->easy_handle;
-            curl_easy_getinfo(curl, CURLINFO_PRIVATE, &requestID);
-
-            int requestIndex = indexOfRequestWithID(requestID);
-            if (requestIndex > -1) {
-                assert(CANCELLED == requests[requestIndex].status || IN_PROGRESS == requests[requestIndex].status);
-
-                if (CANCELLED == requests[requestIndex].status) {
-                    cleanupRequestAtIndex(requestIndex);
-                } else if (msgCode == CURLE_OK) {
-                    requests[requestIndex].status = DONE;
-                    //https://stackoverflow.com/a/291006/12675559
-                    // TODO: request.responseStatus = curl_easy_strerror(msgCode)
-                } else {
-                    printf("error on requestID: %d %s\n", requestID, curl_easy_strerror(msgCode));
-                    requests[requestIndex].status = FAILED;
-                    // TODO: request.errorMessage = curl_easy_strerror(msgCode)
-                }
-            }
-
-            curl_multi_remove_handle(curlMultiHandle, curl);
-            curl_easy_cleanup(curl);
-        }
-    }
+#ifdef EMSCRIPTEN
+static void fetchDoneCallback(void *arg, void *buf, int bufSize) {
+    FetchRequest *req = arg;
+    req->data = malloc(bufSize);
+    if (req->data) memmove(req->data, buf, bufSize);
+    req->byteCount = bufSize;
+    req->status = DONE;
 }
+
+static void fetchErrorCallback(void *arg) {
+    FetchRequest *req = arg;
+    printf("Fetch error, id = %d\n", req->id);
+    req->status = FAILED;
+}
+static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout){
+    if (requestIndex >= MAX_REQUESTS) return nilObj;
+    FetchRequest *request = &requests[requestIndex];
+
+    emscripten_async_wget_data(url, requests, fetchDoneCallback, fetchErrorCallback);
+    printf("🛫 Request ready to start for URL: >%s< ID: [%d] (at: [%d])\n", url, request->id, requestIndex);
+
+    return int2obj(request->id);
+}
+static void processRequestQueue() {
+
+}
+
+#else
+
+static CURLM *curlMultiHandle = NULL;
+
+size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *userData) {
+    size_t realSize = size * nmemb;
+    FetchRequest *request = (FetchRequest *)userData;
+
+    char *ptr = realloc(request->data, request->byteCount + realSize + 1);
+    if (!ptr) {
+        /* out of memory! */
+        printf("not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+
+    request->data = ptr;
+    memcpy(&(request->data[request->byteCount]), buffer, realSize);
+    request->byteCount += realSize;
+    request->data[request->byteCount] = 0;
+
+    return realSize;
+}
+
 
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
     if (requestIndex >= MAX_REQUESTS) return nilObj;
@@ -173,6 +168,52 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
 
     return int2obj(request->id);
 }
+
+static void processRequestQueue() {
+    int stillAlive = 1;
+    int messagesLeft = -1;
+    CURLMsg *msg = NULL;
+
+    if (!curlMultiHandle) {
+        return;
+    }
+
+    curl_multi_perform(curlMultiHandle, &stillAlive);
+    while ((msg = curl_multi_info_read(curlMultiHandle, &messagesLeft))) {
+        if (msg->msg == CURLMSG_DONE) {
+            int requestID;
+
+            CURLcode msgCode = msg->data.result;
+            CURL *curl = msg->easy_handle;
+            curl_easy_getinfo(curl, CURLINFO_PRIVATE, &requestID);
+
+            int requestIndex = indexOfRequestWithID(requestID);
+            if (requestIndex > -1) {
+                assert(CANCELLED == requests[requestIndex].status || IN_PROGRESS == requests[requestIndex].status);
+
+                if (CANCELLED == requests[requestIndex].status) {
+                    cleanupRequestAtIndex(requestIndex);
+                } else if (msgCode == CURLE_OK) {
+                    requests[requestIndex].status = DONE;
+                    //https://stackoverflow.com/a/291006/12675559
+                    // TODO: request.responseStatus = curl_easy_strerror(msgCode)
+                } else {
+                    printf("error on requestID: %d %s\n", requestID, curl_easy_strerror(msgCode));
+                    requests[requestIndex].status = FAILED;
+                    // TODO: request.errorMessage = curl_easy_strerror(msgCode)
+                }
+            }
+
+            curl_multi_remove_handle(curlMultiHandle, curl);
+            curl_easy_cleanup(curl);
+        }
+    }
+}
+
+
+#endif
+
+
 
 // Returns request id on success, nil when there is no free slots for a new request (unlikely)
 static OBJ primStartRequest(int nargs, OBJ args[]) {

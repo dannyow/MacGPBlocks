@@ -3641,11 +3641,11 @@ void initPrimitiveTable() {
 	addPrimitiveSet(entries, count);
 #endif // EMSCRIPTEN
 
-#ifndef EMSCRIPTEN
+#ifndef NO_HTTP
     PrimEntry* httpPrimitives(int *count);
     entries = httpPrimitives(&count);
     addPrimitiveSet(entries, count);
-#endif
+#endif // NO_HTTP
 
 	initPrimitiveDictionary();
 }
