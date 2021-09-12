@@ -76,7 +76,7 @@ to httpFetch url method headers postBody timeout {
 		print '🤙 ' method '
 	url:' url '
 	headers:' headers '
-	body:' body '
+	body:' postBody '
 	timeout:' timeout
 	}
 
