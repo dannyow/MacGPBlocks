@@ -143,7 +143,7 @@ method testGETWithHeaders HTTPFetchTestSuite {
 	
 	expectedHeaders = (list 
 	'Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l'
-	'User-Agent: HTTPFetchTestSuite'
+    'x-gp-header: HTTPFetchTestSuite'
 	)
 
 	result = (httpGET  url nil expectedHeaders)
