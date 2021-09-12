@@ -12,6 +12,8 @@
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <emscripten/fetch.h>
+
 #else
 #include <curl/curl.h>
 #endif
@@ -36,6 +38,7 @@ typedef struct {
     FetchStatus status;
     int byteCount;
     char *data;
+    const char **headers;
 } FetchRequest;
 
 FetchRequest requests[MAX_REQUESTS];
@@ -65,24 +68,99 @@ static void cleanupRequestAtIndex(int index) {
 
 
 #ifdef EMSCRIPTEN
-static void fetchDoneCallback(void *arg, void *buf, int bufSize) {
-    FetchRequest *req = arg;
-    req->data = malloc(bufSize);
-    if (req->data) memmove(req->data, buf, bufSize);
-    req->byteCount = bufSize;
-    req->status = DONE;
+//static void fetchDoneCallback(void *arg, void *buf, int bufSize) {
+//    FetchRequest *req = arg;
+//    req->data = malloc(bufSize);
+//    if (req->data) memmove(req->data, buf, bufSize);
+//    req->byteCount = bufSize;
+//    req->status = DONE;
+//}
+//
+//static void fetchErrorCallback(void *arg) {
+//    FetchRequest *req = arg;
+//    printf("Fetch error, id = %d\n", req->id);
+//    req->status = FAILED;
+//}
+//static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout){
+//    if (requestIndex >= MAX_REQUESTS) return nilObj;
+//    FetchRequest *request = &requests[requestIndex];
+//
+//    emscripten_async_wget_data(url, request, fetchDoneCallback, fetchErrorCallback);
+//    printf("🛫 Request ready to start for URL: >%s< ID: [%d] (at: [%d])\n", url, request->id, requestIndex);
+//
+//    return int2obj(request->id);
+//}
+static void fetchDoneCallback(emscripten_fetch_t *fetch) {
+
+    FetchRequest *request = fetch->userData;
+    printf("🛬 Request finished. URL: >%s< ID: [%d] \n", fetch->url, request->id);
+
+    request->data = malloc(fetch->numBytes);
+    if (request->data) memmove(request->data, fetch->data, fetch->numBytes);
+    request->byteCount = fetch->numBytes;
+    request->status = DONE;
+
+    emscripten_fetch_close(fetch);
 }
 
-static void fetchErrorCallback(void *arg) {
-    FetchRequest *req = arg;
-    printf("Fetch error, id = %d\n", req->id);
+static void fetchErrorCallback(emscripten_fetch_t *fetch) {
+    FetchRequest *req = fetch->userData;
+    printf("Fetch error, id = %d URL: >%s< status: %d\n", req->id, fetch->url, fetch->status);
     req->status = FAILED;
+
+    emscripten_fetch_close(fetch);
 }
+
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout){
+
     if (requestIndex >= MAX_REQUESTS) return nilObj;
+
     FetchRequest *request = &requests[requestIndex];
 
-    emscripten_async_wget_data(url, requests, fetchDoneCallback, fetchErrorCallback);
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+
+    strcpy(attr.requestMethod, method);
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.timeoutMSecs = timeout;
+
+////    static const char* custom_headers[3] = {"***KEY\0", "value\0", 0};
+//    if (headersArray != nilObj) {
+//        int count = WORDS(headersArray);
+//        for (int i = 0; i < count; i++) {
+//            OBJ obj = FIELD(headersArray, i);
+//            char *headerNameValue = obj2str(obj);
+              // Find first ':' character and split string into two separate strings name and value
+//
+//
+//        }
+//
+////        static const char* custom_headers[3] = {"Content-Type", "application/x-www-form-urlencoded", 0};
+////        attr.requestHeaders = custom_headers;
+//        //https://github.com/emscripten-core/emscripten/blob/main/system/include/emscripten/fetch.h
+//        char *h = "Content-Type:application/x-www-form-urlencoded";
+//
+//        //https://github.com/7rooper/UE4_TressFX/blob/77014c43165243f30a69f1d3ef95f9edca379198/Engine/Extras/ThirdPartyNotUE/emsdk/emscripten/1.38.31/system/lib/fetch/emscripten_fetch.cpp#L114
+//        int headersCount = 2;
+//        const char** headers = (const char**)malloc((headersCount + 1) * sizeof(const char*));
+//
+//
+//        attr.requestHeaders = headers;
+//        request->headers = headers;
+//    }
+
+    if( postBodyString ){
+        attr.requestData = postBodyString;
+        attr.requestDataSize = strlen(postBodyString);
+    }
+
+    attr.onsuccess = fetchDoneCallback;
+    attr.onerror = fetchErrorCallback;
+
+    attr.userData = request;
+
+    emscripten_fetch(&attr, url);
+
     printf("🛫 Request ready to start for URL: >%s< ID: [%d] (at: [%d])\n", url, request->id, requestIndex);
 
     return int2obj(request->id);
@@ -117,6 +195,8 @@ size_t fetchWriteDataCallback(void *buffer, size_t size, size_t nmemb, void *use
 
 static OBJ startRequest(int requestIndex, const char *url, const char *method, OBJ headersArray, const char *postBodyString, long timeout) {
     if (requestIndex >= MAX_REQUESTS) return nilObj;
+
+    FetchRequest *request = &requests[requestIndex];
 
     if (curlMultiHandle == NULL) {
         curl_global_init(CURL_GLOBAL_ALL);
@@ -156,8 +236,6 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
     if (postBodyString){
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postBodyString);
     }
-
-    FetchRequest *request = &requests[requestIndex];
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fetchWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)request);
