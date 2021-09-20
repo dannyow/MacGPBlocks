@@ -1,6 +1,6 @@
 
 // HTTPFetch2 Tests
-// By default uses https://jsonplaceholder.typicode.com as test server.
+// By default tests are using https://jsonplaceholder.typicode.com as a json server.
 // The localhost version of json-server can be launched with yarn --cwd=./scripts run start:json-server
 //
 // To run tests agains local server:  (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')
@@ -41,7 +41,7 @@ method testPOST HTTPFetchTestSuite {
 	// $: curl --request POST --header "Content-Type: application/x-www-form-urlencoded" ${URL}/users --data 'name=Freddy%20Krueger'
 	headers = nil // aka use the default content-type, just like html form 'application/x-www-form-urlencoded' 
 	result = (httpPOST url body headers 5000)
-print 'result:' (toString result)
+
 	assertNotEqual result '' 'request to test URL has failed'
 	assert (isClass result 'BinaryData') true 'isClass result ''BinaryData'''
 	newUser = (jsonParse (toString result))
@@ -230,3 +230,6 @@ method testEncodeBodyWithDictionary HTTPFetchTestSuite {
 	queryString = (encodeBody address false)
 	assert queryString 'city=Springwood&street=Elm%20Street&suite=1428C' 
 }
+
+(run (new 'HTTPFetchTestSuite'))
+// (run (new 'HTTPFetchTestSuite') 'http://localhost:3117')

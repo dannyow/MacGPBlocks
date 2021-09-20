@@ -1,10 +1,16 @@
 const chokidar = require('chokidar');
 const { exec } = require('child_process');
+const fs = require('fs');
 
 let watchedSrcs = './runtimes/anamorphic/**';
 
 // App is copied to .build as post-action in xcode (see post-action-copy-app-for-monitor.sh)
 const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+
+if (!fs.existsSync(commandToExecute)) {
+    console.error(`Could not find '${commandToExecute}'\nOpen Xcode and build the app.\n\topen MacGPBlocks.xcodeproj`);
+    process.exit(1);
+}
 
 if (process.env.GP_RUNTIME_DIR) {
     watchedSrcs = `${process.env.GP_RUNTIME_DIR}**`;

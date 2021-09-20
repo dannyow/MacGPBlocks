@@ -11,3 +11,4 @@
 /webapp/gp_wasm.js
 /webapp/gp_wasm.wasm
 /MacGPBlocks/smallvm/buildEmcc.sh
+/test-server

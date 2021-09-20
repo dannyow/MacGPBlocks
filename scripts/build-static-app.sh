@@ -11,6 +11,7 @@
 # only frameworks and standard MacOS libraries (not SDL2 or cairo). The standard libraries
 # are (as of Oct 2019): libz, libbz, libiconv, libexpat, libSystem.B, and libobjc.A
 
+RUNTIME_SRC_DIR=${1:-runtimes/anamorphic/runtime}
 VM_SRC_DIR=MacGPBlocks/smallvm
 WEBAPP_TARGET_DIR=webapp
 BUILD_DIR=.build
@@ -32,11 +33,11 @@ cp -R $RUNTIME_SRC_DIR/lib/**/* $BUILD_DIR/runtime/lib 2>/dev/null  # Flatten th
 echo "✅ Building..."
 cd "$BUILD_DIR/smallvm"
 
-gcc -std=c99 -Wall -O3 -mmacosx-version-min=10.14 \
+gcc -std=c99 -Wall -O3 -mmacosx-version-min=10.15 \
 -D NO_CAMERA \
 -I/usr/local/include/SDL2 \
 cache.c dict.c embeddedFS.c events.c gp.c graphicsPrims.c interp.c jpegPrims.c mem.c memGC.c oop.c parse.c \
-pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c textAndFontPrims.c vectorPrims.c networkPrims.c \
+pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c textAndFontPrims.c vectorPrims.c httpPrims.c \
 /usr/local/lib/libSDL2.a \
 /usr/local/lib/libcairo.a \
 /usr/local/lib/libpixman-1.a \
@@ -53,6 +54,14 @@ pathPrims.c prims.c serialPortPrims.c sha1.c sha2.c socketPrims.c soundPrims.c t
 
 cd "../.."
 
+cat <<EOF
+✅ Build is done. To run:
 
-echo "✅ Done. Run >.build/mac_gp -h<"
+    export GP_RUNTIME_DIR=$(dirname $RUNTIME_SRC_DIR)/
+    ${BUILD_DIR}/mac_gp 
+or    
+    ${BUILD_DIR}/mac_gp -h
+
+EOF
+
 

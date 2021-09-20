@@ -1,6 +1,41 @@
 
-// HTTPFetch2
+// Legacy method
+to httpGetBinary host path port {
+	if (isNil path) { path = '/' }
+	if (isNil port) { port = 80 }
 
+	scheme = 'https://'
+	hostName = host
+	
+	if (beginsWith host 'http://') {
+		scheme = 'http://'
+		hostName = (substring host (count scheme))
+	} (beginsWith host 'https://')  {
+		scheme = 'https://'
+		hostName = (substring host (count scheme))
+	}
+
+	if ('Browser' == (platform)) {
+		if (beginsWith (browserURL) 'https:') {
+			scheme = 'https://'
+		}
+	}
+
+	url = (join scheme hostName path)
+	if (80 != port) { 
+		url = (join scheme hostName ':' port path) 
+	}
+	
+	return (httpGET url)
+}
+
+// Legacy method
+// Returns a string from the given host:[port]path
+to httpGet host path port {
+	return (toString (httpGetBinary host path port))
+}
+
+// Returns obiects parsed from JSON response from the server.
 to restfulGET url parameters headers timeout {
 	if (isNil headers) { headers = (list)}
 
@@ -14,6 +49,7 @@ to restfulGET url parameters headers timeout {
 	return result
 }
 
+// Returns BinaryData
 to httpGET url parameters headers timeout {
 	
 	fetchURL = url

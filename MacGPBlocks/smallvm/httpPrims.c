@@ -11,7 +11,6 @@
 
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <emscripten/fetch.h>
 
 #else
@@ -120,9 +119,9 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
                 char *headerNameValue = obj2str(obj);
 
                 //Find first ':' character and split string into two separate strings name and value
-                char *colonAt = strchr(headerNameValue, ':');
-                if (colonAt) {
-                    long nameLen = (colonAt - headerNameValue);
+                char *colon = strchr(headerNameValue, ':');
+                if (colon) {
+                    long nameLen = (colon - headerNameValue);
                     char *name = malloc(nameLen + 1);
                     if (!name) {
                         freeRequestHeaders(headers);
@@ -134,13 +133,14 @@ static OBJ startRequest(int requestIndex, const char *url, const char *method, O
                     headers[headersIndx++] = name;
 
                     long valueLen = strlen(headerNameValue) - nameLen;
-                    char *value = malloc(valueLen + 1);
+                    char *value = malloc(valueLen);
                     if (!value) {
                         freeRequestHeaders(headers);
                         headers = NULL;
                         break;
                     }
-                    memcpy(value, (colonAt + 1), valueLen);  // copy also zero marker from the orignal headerNameValue
+                    // move one char afer the colon, so valueLen now covers also the zero marker at the end of headerNameValue
+                    memcpy(value, (colon + 1), valueLen);
                     headers[headersIndx++] = value;
                 }
             }

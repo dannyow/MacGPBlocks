@@ -1,5 +1,5 @@
 
-require('dotenv/config');
+require('dotenv').config({ path: `${__dirname}/.env` });
 
 // https://github.com/typicode/json-server
 const jsonServer = require('json-server');
