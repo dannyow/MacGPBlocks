@@ -1,7 +1,6 @@
 // Button.gp - Simple button
-// addPart (global 'page') (morph (newButton)) xxx
 
-defineClass Button morph clickAction offCostume onCostume isOn
+defineClass Button morph clickAction offCostume onCostume isOn hint
 
 to newButton label action {
   return (initialize (new 'Button') label action)
@@ -11,6 +10,7 @@ method initialize Button label action {
   if (isNil label) { label = 'Button' }
   if (isNil action) { action = (action 'toggle' this) }
   morph = (newMorph this)
+  setGrabRule morph 'ignore'
   setLabel this label
   clickAction = action
   isOn = false
@@ -19,6 +19,9 @@ method initialize Button label action {
 
 method toggle Button { setOn this (not isOn) }
 method isOn Button { return isOn }
+
+method setHint Button aStringOrNil { hint = aStringOrNil }
+method hint Button { return hint }
 
 method setOn Button bool {
   isOn = (true == bool)
@@ -30,8 +33,8 @@ method setOn Button bool {
 }
 
 method setLabel Button label offColor onColor minWidth minHeight fontName fontSize fontColor {
-  if (isNil offColor) { offColor = (gray 120) }
-  if (isNil onColor) { onColor = (lighter offColor 50) }
+  if (isNil offColor) { offColor = (gray 140) }
+  if (isNil onColor) { onColor = (lighter offColor 15) }
   offBM = (makeCostume this label offColor minWidth minHeight fontName fontSize fontColor)
   onBM = (makeCostume this label onColor minWidth minHeight fontName fontSize fontColor)
   setCostumes this offBM onBM
@@ -49,11 +52,12 @@ method makeCostume Button label color minWidth minHeight fontName fontSize fontC
   // Draw a button with the given label and color. The label can be a String or a Bitmap.
   scale = (global 'scale')
   if (isNil label) { label = 'Click!' }
-  if (isNil color) { color = (gray 120) }
+  if (isNil color) { color = (gray 130) }
   if (isNil minWidth) { minWidth = 10 }
   if (isNil minHeight) { minHeight = 10 }
   if (isNil fontName) { fontName = 'Arial Bold' }
-  if (isNil fontSize) { fontSize = (scale * 11) }
+  if (isNil fontSize) { fontSize = (scale * 13) }
+  if ('Linux' == (platform)) { fontSize = (scale * 11) }
   if (isNil fontColor) { fontColor = (gray 255) }
 
   borderColor = (gray 80)
@@ -64,7 +68,7 @@ method makeCostume Button label color minWidth minHeight fontName fontSize fontC
 
   if (isClass label 'String') {
 	setFont fontName fontSize
-	labelBitmap = (newBitmap (stringWidth label) (fontHeight))
+	labelBitmap = (newBitmap (stringWidth label) (fontHeight) (gray 255 0))
 	drawString labelBitmap label fontColor
   } else {
 	labelBitmap = label
@@ -89,11 +93,22 @@ method handDownOn Button hand {
 }
 
 method handEnter Button aHand {
+  setCursor 'pointer'
   if (notNil onCostume) {
 	setCostume morph onCostume
+  }
+  if (notNil hint) {
+	addSchedule (global 'page') (schedule (action 'showTooltip' morph hint) 500)
   }
 }
 
 method handLeave Button aHand {
+  setCursor 'default'
+  // handEnter happens before handLeave, so cursor wouldn't go back to finger
+  // when you move between two buttons without any space in between. A temporary
+  // solution is to re-trigger handEnter on the new morph under the hand.
+  handEnter (objectAt aHand) aHand
   setOn this isOn
+  if (notNil hint) {removeHint (page aHand)}
+  removeSchedulesFor (global 'page') 'showTooltip' morph
 }

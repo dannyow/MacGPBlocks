@@ -51,16 +51,22 @@ method press Trigger {
 }
 
 method handEnter Trigger aHand {
+  setCursor 'pointer'
   highlight this
   if (notNil hint) {
-	addSchedule (global 'page') (schedule (action 'showHint' morph hint) 300)
+	addSchedule (global 'page') (schedule (action 'showTooltip' morph hint) 300)
   }
 }
 
 method handLeave Trigger aHand {
+  setCursor 'default'
+  // handEnter happens before handLeave, so cursor wouldn't go back to finger
+  // when you move between two buttons without any space in between. A temporary
+  // solution is to re-trigger handEnter on the new morph under the hand.
+  handEnter (objectAt aHand) aHand
   normal this
   if (notNil hint) {removeHint (page aHand)}
-  removeSchedulesFor (global 'page') 'showHint' morph
+  removeSchedulesFor (global 'page') 'showTooltip' morph
 }
 
 method handDownOn Trigger aHand {
@@ -106,7 +112,12 @@ method rightClicked Trigger {
   return true
 }
 
+method normalCostume Trigger { return normalCostume }
+
 method replaceCostumes Trigger normalBM highlightBM pressedBM {
+  if (notNil normalBM) {
+	setExtent morph (width normalBM) (height normalBM)
+  }
   normalCostume = normalBM
   highlightCostume = highlightBM
   pressedCostume = pressedBM
@@ -133,33 +144,9 @@ method clearCostumes Trigger {
 to pushButton label color action minWidth minHeight {
   btn = (new 'Trigger' (newMorph) action)
   setHandler (morph btn) btn
+  setGrabRule (morph btn) 'ignore'
   drawLabelCostumes btn label color minWidth minHeight
   return btn
-}
-
-to downArrowButton color action {
-  btn = (new 'Trigger' (newMorph) action)
-  setTransparentTouch (morph btn) true
-  setHandler (morph btn) btn
-  drawDownArrowCostumes btn color
-  return btn
-}
-
-method drawDownArrowCostumes Trigger color {
-  if (isNil color) {color = (color)}
-
-  scale = (global 'scale')
-  size = (scale * 10)
-  unit = (size / 2)
-  space = (size / 3)
-
-  bm = (newBitmap (+ size space 1) size)
-  fillArrow (newShapeMaker bm) (rect 0 unit size unit) 'down' color
-
-  normalCostume = bm
-  highlightCostume = bm
-  pressedCostume = bm
-  setCostume morph normalCostume
 }
 
 method drawLabelCostumes Trigger label color minWidth minHeight {
@@ -172,11 +159,13 @@ method drawLabelCostumes Trigger label color minWidth minHeight {
 }
 
 to buttonBitmap label color w h isInset corner border hasFrame flat {
-  if (isNil flat) {flat = (global 'flat')}
+  if (isNil flat) {flat = true}
   if (isClass label 'String') {
     scale = (global 'scale')
     off = (max (scale / 2) 1)
-    lbm = (stringImage label 'Arial Bold' (scale * 11) (color 255 255 255) 'center' (darker color) (off * -1) nil nil nil nil nil nil flat)
+    fontName = 'Arial Bold'
+    fontSize = (11 * scale)
+    lbm = (stringImage (localized label) fontName fontSize (gray 255) 'center' (darker color) (off * -1) nil nil nil nil nil nil flat)
   } else {
     lbm = nil
   }
@@ -199,7 +188,7 @@ to buttonImage labelBitmap color corner border isInset hasFrame width height fla
   if (isNil hasFrame) {hasFrame = true}
   if (isNil width) {width = (+ corner corner border border)}
   if (isNil height) {height = (+ border border)}
-  if (isNil flat) {flat = (global 'flat')}
+  if (isNil flat) {flat = true}
 
   lblWidth = 0
   if (isClass labelBitmap 'Bitmap') {lblWidth = (width labelBitmap)}
@@ -218,6 +207,7 @@ to buttonImage labelBitmap color corner border isInset hasFrame width height fla
     if isInset {off = (max (border / 2) 1)}
     drawBitmap bm labelBitmap (((w - (width labelBitmap)) / 2) + off) (((h - (height labelBitmap)) / 2) + off)
   }
+  if ('Browser' != (platform)) { unmultiplyAlpha bm }
   return bm
 }
 

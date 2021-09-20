@@ -62,7 +62,7 @@ to blockSpecFromStrings blockOp blockType specString typeString defaults {
     atPut specs i (trim (at specs i))
   }
   repeatLastSpec = false
-  if ('...' == (last specs)) {
+  if (and ((count specs) > 0) ('...' == (last specs))) {
 	repeatLastSpec = true
     specs = (copyArray specs ((count specs) - 1))
   }
@@ -102,7 +102,7 @@ method setSlotInfo BlockSpec typeString defaults {
 	  if ((count w) == 2) {
 		menuSelector = (at w 2)
 	  }
-	  if (not (contains (array 'num' 'str' 'auto' 'bool' 'color' 'cmd' 'var' 'menu') type)) {
+	  if (not (contains (array 'num' 'str' 'auto' 'bool' 'color' 'cmd' 'var' 'menu' 'microbitDisplay') type)) {
 		hint = type
 		type = 'any'
 	  }
@@ -163,12 +163,14 @@ method inputSlot BlockSpec slotIndex blockColor isFormalParameter argNames {
   if ('bool' == slotType) {
     slotContent = (at info 2)
     if (isNil slotContent) {slotContent = true}
-    if (not (global 'stealthBlocks')) {
-      return (newBooleanSlot slotContent)
-    }
+    return (newBooleanSlot slotContent)
   }
   if ('color' == slotType) {
     return (newColorSlot)
+  }
+  if ('microbitDisplay' == slotType) {
+    slotContent = (at info 2)
+    return (newMicroBitDisplaySlot slotContent)
   }
   if ('menu' == slotType) {
     slotContent = (at info 2)
@@ -202,9 +204,9 @@ method slotInfoForIndex BlockSpec slotIndex {
   if (not repeatLastSpec) { error 'Slot index is out of range' }
   repeatedSlotCount = (countInputSlots this (last specs))
   if (repeatedSlotCount == 0) { error 'The repeated slot spec must have at least one input slot' }
-  repeatedSlotStart = (((count slotInfo) - repeatedSlotCount))
-  n = (slotIndex - repeatedSlotStart)
-  i = (max 1 ((((n - repeatedSlotStart) % repeatedSlotCount)) + repeatedSlotStart))
+  firstRepeatedSlot = ((((count slotInfo) - repeatedSlotCount)) + 1)
+  i = (firstRepeatedSlot + ((slotIndex - firstRepeatedSlot) % repeatedSlotCount))
+  if (i < 1) { return (array 'auto' '' nil nil) } // default if no slot info
   return (at slotInfo i)
 }
 
@@ -299,8 +301,8 @@ method countAllSpecSlots BlockSpec {
 method countInputSlots BlockSpec specString {
   // Return the number of underscores (input slots) in the given string.
   result = 0
-  for ch (letters specString) {
-	if ('_' == ch) { result += 1 }
+  for w (words specString) {
+	if ('_' == w) { result += 1 }
   }
   return result
 }
@@ -326,20 +328,27 @@ method specDefinitionString BlockSpec className {
 	defaultValues = (list)
 	for info slotInfo {
 	  slotType = (at info 1)
-	  add slotTypes slotType
-	  if (isOneOf slotType 'auto' 'str') {
+	  if (isOneOf slotType 'auto' 'menu' 'str') {
 		add defaultValues (printString (at info 2))
-	  } (isOneOf slotType 'bool' 'num') {
+	  } (isOneOf slotType 'bool' 'num' 'microbitDisplay') {
 		add defaultValues (toString (at info 2))
 	  } else {
 		add defaultValues 'nil'
 	  }
+	  if ('menu' == slotType) { slotType = (join 'menu.' (at info 4)) }
+	  if (and ('str' == slotType) (notNil (at info 4))) {
+		slotType = (join 'str.' (at info 4))
+	  }
+	  add slotTypes slotType
 	}
 	if (notNil className) { atPut slotTypes 1 className } // for methods, first type is the class name
 	add result (printString (joinStrings slotTypes ' '))
+
+	// remove trailing nil's from defaultValues, then add them
+	while (and (notEmpty defaultValues) ('nil' == (last defaultValues))) {
+		removeLast defaultValues
+	}
 	for v defaultValues { add result v }
-  } else {
-	add result (printString '') // empty slot type string
   }
   return (joinStrings result ' ')
 }

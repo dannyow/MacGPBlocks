@@ -34,7 +34,7 @@ method addSpecs AuthoringSpecs newSpecs {
   for entry newSpecs {
 	add specsList entry
 	if (isClass entry 'String') {
-	  category = entry
+	  if ('-' != entry) { category = entry }
 	} else {
 	  op = (at entry 2)
 	  specsForOp = (at specsByOp op (list))
@@ -54,7 +54,7 @@ method recordBlockSpec AuthoringSpecs op spec {
   // Record a block spec for the give op. Called when creating/changing functions and methods.
   editor = (findProjectEditor)
   if (isNil editor) { return } // should not happen
-  atPut (blockSpecs (project editor)) op spec
+  recordBlockSpec (project editor) op spec
 }
 
 // queries
@@ -135,7 +135,11 @@ method specsFor AuthoringSpecs category {
   currentCategory = ''
   for entry specsList {
 	if (isClass entry 'String') {
-	  currentCategory = entry
+	  if ('-' == entry) {
+		if (currentCategory == category) { add result '-' }
+	  } else {
+		currentCategory = entry
+	  }
 	} (currentCategory == category) {
 	  add result (specForEntry this entry)
 	}
@@ -154,11 +158,6 @@ method hasTopLevelSpec AuthoringSpecs op {
 // block colors
 
 method blockColorForOp AuthoringSpecs op {
-  if (true == (global 'alanMode')) {
-	if ('comment' == op) { return (gray 237) }
-	c = (blockColorForCategory this (at opCategory op))
-	return (alansBlockColorForCategory this (at opCategory op))
-  }
   if ('comment' == op) { return (colorHSV 55 0.6 0.93) }
   return (blockColorForCategory this (at opCategory op))
 }
@@ -178,18 +177,6 @@ method blockColorForCategory AuthoringSpecs cat {
 	return (color 196 15 0)
   }
   if (notNil (global 'defaultColor')) { return (global 'defaultColor') }
-  return defaultColor
-}
-
-method alansBlockColorForCategory AuthoringSpecs cat {
-  defaultColor = (gray 190) // 180
-  if (isOneOf cat 'Control' 'Functions') {
-	return (gray 200) // 190
-  } ('Variables' == cat) {
-	return (gray 185) // 175
-  } ('Operators' == cat) {
-	return (gray 220) // 230
-  }
   return defaultColor
 }
 
@@ -244,6 +231,10 @@ method setLanguage AuthoringSpecs newLang {
 	translationData = (readFile (join 'translations/' newLang '.txt'))
   }
   if (isNil translationData) {
+	// if still nil, we may be in the wrong dir
+	translationData = (readFile (join '../translations/' newLang '.txt'))
+  }
+  if (isNil translationData) {
 	language = 'English'
 	translationDictionary = nil
   } else {
@@ -269,27 +260,58 @@ method needsTranslation AuthoringSpecs spec {
 
   if (isNil translationDictionary) { return false }
   for s (specs spec) {
-	if (contains translationDictionary s) { return true }
+	localization = (localizedOrNil s)
+	if (or (isNil localization) (localization == '--MISSING--')) {
+		return false
+	} else {
+		return true
+	}
   }
   return false
 }
 
-method installTranslation AuthoringSpecs translationData {
+method installTranslation AuthoringSpecs translationData langName {
   // Translations data is string consisting of three-line entries:
   //	original string
   //	translated string
   //	<blank line>
   //	...
+  // Lines starting with # are treated as comments
 
   translationDictionary = (dictionary)
   lines = (toList (lines translationData))
   while ((count lines) >= 2) {
 	from = (removeFirst lines)
-	to = (removeFirst lines)
-	atPut translationDictionary from to
-	while (and ((count lines) > 0) ((removeFirst lines) != '')) {
-	  // skip lines until the next blank line
+	// ignore comments and blank lines
+	while (and
+			((count lines) >= 2)
+			(or (beginsWith from '#') (from == ''))) {
+		from = (removeFirst lines)
 	}
+	if ((count lines) >= 1) {
+		to = (removeFirst lines)
+		atPut translationDictionary from to
+	}
+  }
+  if (notNil langName) { language = langName }
+}
+
+to localized aString {
+  localization = (localizedOrNil aString)
+  if (or (isNil localization) (localization == '--MISSING--')) {
+	return aString
+  } else {
+	return localization
+  }
+}
+
+to localizedOrNil aString {
+  if (isNil aString) { return nil }
+  dict = (getField (authoringSpecs) 'translationDictionary')
+  if (isNil dict) {
+	return aString
+  } else {
+	return (at dict aString)
   }
 }
 

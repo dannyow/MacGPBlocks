@@ -1,4 +1,4 @@
-defineClass ProjectEditor morph fileName project imagesFolder soundsFolder stage scripter library viewer viewerWidth tabs leftItems rightItems rightItemsRow2 stealthSlider title connectorToggle fpsReadout lastFrameTime frameCount
+defineClass ProjectEditor morph fileName project imagesFolder soundsFolder stage scripter library viewer viewerWidth tabs leftItems rightItems rightItemsRow2 title connectorToggle fpsReadout lastFrameTime frameCount
 
 method project ProjectEditor { return project }
 method stage ProjectEditor { return stage }
@@ -31,11 +31,10 @@ to startProjectEditorFromMorphic {
 
 to o tryRetina devMode { openProjectEditor tryRetina devMode } // shortcut, because Jens needs it so often :-)
 
-to openProjectEditor tryRetina devMode presentFlag {
+to openProjectEditor tryRetina devMode {
   if (isNil tryRetina) { tryRetina = true }
   if (isNil devMode) { devMode = true }
-  if (isNil (global 'alanMode')) { setGlobal 'alanMode' false }
-  if (isNil (global 'vectorTrails')) { setGlobal 'vectorTrails' false }
+  if (isNil (global 'vectorTrails')) { setGlobal 'vectorTrails' true }
   if (and ('Browser' == (platform)) (browserIsMobile)) {
 	page = (newPage 1024 640)
   } else {
@@ -46,16 +45,22 @@ to openProjectEditor tryRetina devMode presentFlag {
   open page tryRetina
   editor = (initialize (new 'ProjectEditor') (emptyProject))
   addPart page editor
+  projName = 'new project'
   if (notNil (global 'initialProject')) {
 	dataAndURL = (global 'initialProject')
+    projName = (filePart (last dataAndURL))
   	openProject editor (first dataAndURL) (last dataAndURL)
+  }
+  goFlag = false
+  if ('Browser' == (platform)) {
+	if ('go.html' == (extractCommand (browserURL))) { goFlag = true }
+	hide (morph (first (getField editor 'rightItems'))) // hide the 'Present' button in browser
+	browserPostMessage (join projName ' loaded') true
   }
   pageResized editor
   developerModeChanged editor
-  if presentFlag {
-	enterPresentation editor
-  }
-  startSteppingSafely page presentFlag
+  if goFlag { enterPresentation editor }
+  startSteppingSafely page goFlag
 }
 
 to findProjectEditor {
@@ -73,7 +78,7 @@ method initialize ProjectEditor aProject {
   morph = (newMorph this)
   project = aProject
   viewerWidth = ((width (global 'page')) - (800 * scale))
-  viewerWidth = (max viewerWidth (235 * scale))
+  viewerWidth = (max viewerWidth (400 * scale))
   addTopBarParts this
   scripter = (initialize (new 'Scripter') this)
   addPart morph (morph scripter)
@@ -108,11 +113,8 @@ method addTopBarParts ProjectEditor {
   connectorToggle = (toggleButton
 	(action 'toggleConnectors' page) (action 'isShowingConnectors' page)
 	(scale * 20) (scale * 13) (scale * 5) (max 1 (scale / 2)) false)
-  addPart morph (morph connectorLabel)
-  addPart morph (morph connectorToggle)
-
-  stealthSlider = (slider 'horizontal' (* scale 50) (action 'setBlocksStealthLevel' this) nil -50 110 (global 'stealthLevel'))
-  addPart morph (morph stealthSlider)
+//   addPart morph (morph connectorLabel)
+//   addPart morph (morph connectorToggle)
 
   leftItems = (list)
   add leftItems (textButton this 'New' 'newProject')
@@ -132,12 +134,8 @@ method addTopBarParts ProjectEditor {
   add rightItems (textButton this 'Stop' (action 'stopAll' page))
 
   rightItemsRow2 = (list)
-  add rightItemsRow2 connectorLabel
-  add rightItemsRow2 connectorToggle
-  add rightItemsRow2 space
-  add rightItemsRow2 (clickLabel this 'Blocks' 'slideToBlocks')
-  add rightItemsRow2 stealthSlider
-  add rightItemsRow2 (clickLabel this 'Text' 'slideToText')
+//   add rightItemsRow2 connectorLabel
+//   add rightItemsRow2 connectorToggle
   add rightItemsRow2 space
   add rightItemsRow2 (addFPSReadout this)
 }
@@ -193,7 +191,6 @@ method clearProject ProjectEditor {
   // reset global state (pen trails, stage color, connector state)
   deletePenTrails (morph stage)
   setColor (handler (morph stage)) (gray 240)
-  if (true == (global 'alanMode')) { setColor (handler (morph stage)) (gray 255) }
   setIsShowingConnectors page (not ('Browser' == (platform))) // show arrows
   refresh connectorToggle
 }
@@ -478,11 +475,31 @@ method checkForBrowserResize ProjectEditor {
   for each (parts pageM) { pageResized (handler each) w h this }
 }
 
+method processBrowserMessages ProjectEditor {
+  while true {
+	msg = (browserGetMessage)
+	if (isNil msg) { return }
+	if ('go' == msg) {
+	  broadcastGo (global 'page')
+	} ('stop' == msg) {
+	  stopAll (global 'page')
+	} ('seeInside' == msg) {
+	   exitPresentation this
+	   browserPostMessage 'hideButton SeeInsideButton'
+	   browserPostMessage 'showButton PresentButton'
+	} ('present' == msg) {
+	   enterPresentation this
+	   browserPostMessage 'showButton SeeInsideButton'
+	   browserPostMessage 'hideButton PresentButton'
+	}
+  }
+}
+
 // media management
 
 method importMediaFile ProjectEditor type {
   if ('Browser' == (platform)) {
-	browserFileImport
+	browserReadFile
   } else {
 	if ('image' == type) {
 	  if (isNil imagesFolder) { imagesFolder = (gpFolder) }
@@ -567,40 +584,6 @@ method addSoundToProject ProjectEditor data fName {
   refreshTab this
 }
 
-// blocks stealth level
-
-method setBlocksStealthLevel ProjectEditor level {
-  level = (max (min level 100) -50)
-  setGlobal 'stealthLevel' level
-  if (level < -19) {
-	setBlocksMode 'normal'
-  } (level < 0) {
-	setBlocksMode 'flat'
-  } (level > 99) {
-	setBlocksMode 'stealth'
-  } else {
-	setBlocksMode 'stealth'
-  }
-  if (and (notNil scripter) ('Scripts' == (selection tabs))) { restoreScripts scripter }
-}
-
-method animateStealth ProjectEditor level {
-  setBlocksStealthLevel this level
-  setValue stealthSlider level
-}
-
-method slideToText ProjectEditor {
-  time = 5000
-  already = ((+ 50 (global 'stealthLevel')) / 150.0)
-  addSchedule (global 'page') (newAnimation (global 'stealthLevel') 120 (time - (toInteger (* already time))) (action 'animateStealth' this) nil false)
-}
-
-method slideToBlocks ProjectEditor {
-  time = 5000
-  already = ((+ 50 (global 'stealthLevel')) / 150.0)
-  addSchedule (global 'page') (newAnimation (global 'stealthLevel') -50 (toInteger (* already time)) (action 'animateStealth' this) nil false)
-}
-
 // FPS readout
 
 method addFPSReadout ProjectEditor {
@@ -616,6 +599,7 @@ method step ProjectEditor {
   if ('Browser' == (platform)) {
   	processImportedFiles this
   	checkForBrowserResize this
+  	processBrowserMessages this
   }
   processDroppedFiles this
   if (isNil fpsReadout) { return }
@@ -668,6 +652,49 @@ method normalStageSize ProjectEditor {
   fixStageLayout this
 }
 
+method rebuild ProjectEditor {
+  scale = (global 'scale')
+
+  saveScripts scripter
+  oldProject = project
+  oldCategory = (currentCategory scripter)
+  oldTargetObj = (targetObj scripter)
+  oldTab = (selection tabs)
+  oldPage = (first (pages project))
+  unloadPage stage oldPage
+
+  removeAllParts morph
+  viewerWidth = ((width (global 'page')) - (800 * scale))
+  viewerWidth = (max viewerWidth (400 * scale))
+  addTopBarParts this
+  scripter = (initialize (new 'Scripter') this)
+  addPart morph (morph scripter)
+  stage = (newStage 16 10)
+  addPart morph (morph stage)
+  library = (initialize (new 'SpriteLibrary') scripter)
+  addPart morph (morph library)
+  setStageMorph scripter (morph stage)
+  tabs = (tabBar (list 'Scripts' 'Images' 'Sounds' 'Notes') nil (action 'showTab' this) (transparent) 12)
+  setBGColors tabs (gray 240) (gray 150) (gray 100) // match tab colors to Scripter border and class pane colors
+  addPart morph (morph tabs)
+
+  loadPage stage (first (pages project))
+  select tabs 'Scripts'
+  selectCategory scripter oldCategory
+  loadPage stage oldPage
+  setTargetObj scripter oldTargetObj
+  select tabs oldTab
+  developerModeChanged scripter
+
+  drawTopBar this
+  fixLayout this
+  return this
+}
+
+method scaleChanged ProjectEditor {
+  rebuild this
+}
+
 method pageResized ProjectEditor {
   scale = (global 'scale')
   page = (global 'page')
@@ -679,7 +706,7 @@ method pageResized ProjectEditor {
 	viewerWidth = (560 * scale)
 	setExtent (morph viewer) viewerWidth nil
   }
-  viewerWidth = (max viewerWidth (235 * (global 'scale')))
+  viewerWidth = (max viewerWidth (400 * (global 'scale')))
   if (not (isVisible morph)) { // presentation mode
 	scaleToFit stage (width page) (height page)
 	gotoCenterOf (morph stage) (morph page)
@@ -687,18 +714,13 @@ method pageResized ProjectEditor {
 	drawTopBar this
 	fixLayout this
   }
-  if ('Win' == (platform)) {
-	// workaround for a Windows graphics issue: when resizing a window it seems to clear
-	// some or all textures. this forces them to be updated from the underlying bitmap.
-	for m (allMorphs (morph page)) { costumeChanged m }
-  }
 }
 
 method drawTopBar ProjectEditor {
   w = (width (morph (global 'page')))
   h = (48 * (global 'scale'))
   if ('iOS' == (platform)) { h += (13 * (global 'scale')) }
-  oldC = (costume morph)
+  oldC = (costumeData morph)
   if (or (isNil oldC) (w != (width oldC)) (h != (height oldC))) {
 	setCostume morph (newBitmap w h (gray 200))
   if ('iOS' == (platform)) {
@@ -795,6 +817,7 @@ method fixStageLayout ProjectEditor {
   newH = (max 1 ((height pageM) - (top viewerM)))
   scaleToFit stage newW newH
   setPosition (morph stage) (right viewerM) (bottom morph) true
+  changed this
 }
 
 method fixLibraryLayout ProjectEditor {
