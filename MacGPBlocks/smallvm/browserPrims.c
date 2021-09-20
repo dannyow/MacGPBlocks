@@ -17,42 +17,12 @@
 
 #define MAX_TEXTURE_SIZE 8192
 
-// ***** Fetch request state *****
-
-typedef enum {IN_PROGRESS, DONE, FAILED} FetchStatus;
-
-typedef struct {
-	int id;
-	FetchStatus status;
-	int byteCount;
-	char *data;
-} FetchRequest;
-
-#define MAX_REQUESTS 1000
-FetchRequest requests[MAX_REQUESTS];
-
-static int nextFetchID = 100;
-
 // ***** Helper Functions *****
 
 static int isInBrowser() {
 	return EM_ASM_INT({
 		return !ENVIRONMENT_IS_NODE;
 	}, NULL);
-}
-
-static void fetchDoneCallback(void *arg, void *buf, int bufSize) {
-	FetchRequest *req = arg;
-	req->data = malloc(bufSize);
-	if (req->data) memmove(req->data, buf, bufSize);
-	req->byteCount = bufSize;
-	req->status = DONE;
-}
-
-static void fetchErrorCallback(void *arg) {
-	FetchRequest *req = arg;
-	printf("Fetch error, id = %d\n", req->id);
-	req->status = FAILED;
 }
 
 // ***** Browser Support Primitives *****
@@ -81,66 +51,6 @@ static OBJ primBrowserURL(int nargs, OBJ args[]) {
 		Module.HEAPU8[out + outIndex] = 0; // null terminate
 	}, &s, sizeof(s));
 	return newString(s);
-}
-
-static OBJ primStartFetch(int nargs, OBJ args[]) {
-	if (nargs < 1) return notEnoughArgsFailure();
-	OBJ url = args[0];
-	if (NOT_CLASS(url, StringClass)) return primFailed("First argument must be a string");
-
-	if (!isInBrowser()) return primFailed("Only works in a browser");
-
-	// find an unused request
-	int i;
-	for (i = 0; i < MAX_REQUESTS; i++) {
-		if (!requests[i].id) {
-			requests[i].id = nextFetchID++;
-			requests[i].status = IN_PROGRESS;
-			requests[i].data = NULL;
-			requests[i].byteCount = 0;
-			break;
-		}
-	}
-	if (i >= MAX_REQUESTS) return nilObj; // no free request slots (unlikely)
-
-	emscripten_async_wget_data(obj2str(url), &requests[i], fetchDoneCallback, fetchErrorCallback);
-	return int2obj(requests[i].id);
-}
-
-static OBJ primFetchResult(int nargs, OBJ args[]) {
-	// Returns a BinaryData object on success, false on failure, and nil when fetch is still in progress.
-	if (nargs < 1) return notEnoughArgsFailure();
-	if (!isInt(args[0])) return primFailed("Expected integer");
-	int id = obj2int(args[0]);
-
-	// find the fetch request with the given id
-	int i;
-	for (i = 0; i < MAX_REQUESTS; i++) {
-		if (requests[i].id == id) break;
-	}
-	if (i >= MAX_REQUESTS) return falseObj; // could not find request with id; report as failure
-	if (IN_PROGRESS == requests[i].status) return nilObj; // in progress
-
-	OBJ result = falseObj;
-
-	if (DONE == requests[i].status && requests[i].data) {
-		// allocate result object
-		int byteCount = requests[i].byteCount;
-		result = newBinaryData(byteCount);
-		if (result) {
-			memmove(&FIELD(result, 0), requests[i].data, byteCount);
-		} else {
-			printf("Insufficient memory for requested file (%ul bytes needed); skipping.\n", byteCount);
-		}
-	}
-
-	// mark request as free and free the request data, if any
-	requests[i].id = 0;
-	if (requests[i].data) free(requests[i].data);
-	requests[i].data = NULL;
-	requests[i].byteCount = 0;
-
-	return result;
 }
 
 static OBJ primBrowserSize(int nargs, OBJ args[]) {
@@ -1312,8 +1222,6 @@ OBJ primSetCursor(int nargs, OBJ args[]) {
 static PrimEntry browserPrimList[] = {
 	{"-----", NULL, "Browser Support"},
 	{"browserURL",				primBrowserURL,			"Return the full URL of the current browser page."},
-	{"startFetch",				primStartFetch,			"Start downloading the contents of a URL. Return an id that can be used to get the result. Argument: urlString"},
-	{"fetchResult",				primFetchResult,		"Return the result of the fetch operation with the given id: a BinaryData object (success), false (failure), or nil if in progress. Argument: id"},
 	{"browserSize",				primBrowserSize,		"Return the inner width and height of the browser window."},
 	{"browserScreenSize",		primBrowserScreenSize,	"Return the width and height of the entire screen containing the browser."},
 	{"setFillBrowser",			primSetFillBrowser,		"Set 'fill browser' mode. If true, the GP canvas is resized to fill the entire browser window."},

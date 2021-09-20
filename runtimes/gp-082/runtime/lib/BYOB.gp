@@ -72,7 +72,6 @@ method initializeSections BlockDefinition aBlockSpec firstSection argNames {
       addPart morph (morph sec)
     }
   }
-  fixLayout this
 }
 
 method initializeRepeater BlockDefinition aBlockSpec {
@@ -91,12 +90,9 @@ method initializeRepeater BlockDefinition aBlockSpec {
   addPart (morph repeater) (morph drawer)
 
   scale = (global 'scale')
-  if (global 'stealthBlocks') {
-    labelColor = (gray (stealthLevel 255 0))
-  } else {
-    labelColor = (global 'blockTextColor')
-    if (isNil labelColor) { labelColor = (gray 255) }
-  }
+  labelColor = (global 'blockTextColor')
+  if (isNil labelColor) { labelColor = (gray 255) }
+
   txt = (newText 'repeat last section:' 'Arial' (10 * scale) labelColor)
   addPart (morph repeater) (morph txt)
 
@@ -114,7 +110,7 @@ method toggleRepeat BlockDefinition {
 
 method fixLayout BlockDefinition {
   addPart morph (morph repeater) // make sure repeater is the last part
-  redraw drawer
+  fixLayout drawer
   fixLayout repeater
   fixLayout alignment
   raise morph 'layoutChanged' this
@@ -151,13 +147,11 @@ method canCollapse BlockDefinition {
 
 method expand BlockDefinition {
   addPart morph (morph (newBlockSectionDefinition))
-  fixLayout this
   raise morph 'updateBlockDefinition' this
 }
 
 method collapse BlockDefinition {
-  destroy (at (parts morph) (- (count (parts morph)) 1))
-  fixLayout this
+  destroy (at (parts morph) ((count (parts morph)) - 1))
   raise morph 'updateBlockDefinition' this
 }
 
@@ -177,12 +171,6 @@ method rightClicked BlockDefinition aHand {
   contextMenu this
   return true
 }
-
-// method doubleClicked BlockDefinition {
-//    if (isNil (ownerThatIsA morph 'Block')) {return false}
-//    hideDetails this
-//    return true
-// }
 
 method typesMenu BlockDefinition {
   menu = (menu nil (action 'setType' this) true)
@@ -218,8 +206,7 @@ method setType BlockDefinition aTypeString {
   type = aTypeString
   prot = (handler (ownerThatIsA morph 'Block'))
   setField prot 'type' aTypeString
-  redraw prot
-  fixLayout prot
+  fixLayoutNow prot
   raise morph 'updateBlockDefinition' this
 }
 
@@ -291,16 +278,19 @@ method exportAsImage BlockDefinition {
   blockM = (ownerThatIsA morph 'Block')
   if (notNil blockM) { blockM = (owner blockM) } // get the prototype hat block
   if (or (isNil blockM) (not (isPrototypeHat (handler blockM)))) { return }
-  fName = (uniqueNameNotIn (listFiles (gpFolder)) 'scriptImage' '.png')
-  fName = (fileToWrite fName '.png')
-  if ('' == fName) { return }
-  if (not (endsWith fName '.png')) { fName = (join fName '.png') }
-  gc
   bnds = (fullBounds blockM)
   bm = (newBitmap (width bnds) (height bnds))
-  draw2 blockM bm (- (left bnds)) (- (top bnds))
-  pixelsPerInch = (72 * (global 'scale'))
-  writeFile fName (encodePNG bm pixelsPerInch)
+  draw blockM bm (- (left bnds)) (- (top bnds))
+  pngData = (encodePNG bm)
+  if ('Browser' == (platform)) {
+	browserWriteFile pngData (join 'scriptImage' (msecsSinceStart) '.png') 'scriptImage'
+  } else {
+	fName = (uniqueNameNotIn (listFiles (gpFolder)) 'scriptImage' '.png')
+	fName = (fileToWrite fName '.png')
+	if ('' == fName) { return }
+	if (not (endsWith fName '.png')) { fName = (join fName '.png') }
+	writeFile fName pngData
+  }
 }
 
 method hideDefinition BlockDefinition {
@@ -443,27 +433,20 @@ method initializeFromSpec BlockSectionDefinition blockSpec argNames index isMeth
 
   for w (words specString) {
     if ('_' == w) {
-// 	  if (or (not isMethod) (slotIndex > 1)) {
-// print 'suppressing "this" in block definition' // xxx
-		addInputSlot this blockSpec slotIndex argNames
-//       }
+      addInputSlot this blockSpec slotIndex argNames
       slotIndex += 1
     } else {
       addLabelText this w
     }
   }
-  redraw drawer
+  fixLayout drawer
   fixLayout this
 }
 
 method fixLayout BlockSectionDefinition {
   addPart morph (morph drawer) // make sure drawer is the last part
   fixLayout alignment
-  def = (ownerThatIsA morph 'BlockDefinition')
-  if (notNil def) {fixLayout (handler def)}
 }
-
-method layoutChanged BlockSectionDefinition {fixLayout this}
 
 // expanding and collapsing:
 
@@ -486,8 +469,8 @@ method expand BlockSectionDefinition {
 }
 
 method collapse BlockSectionDefinition {
-  destroy (at (parts morph) (- (count (parts morph)) 1))
-  redraw drawer
+  destroy (at (parts morph) ((count (parts morph)) - 1))
+  fixLayout drawer
   fixLayout this
   raise morph 'updateBlockDefinition' this
 }
@@ -503,16 +486,18 @@ method expansionMenu BlockSectionDefinition {
 
 method showDetails BlockSectionDefinition {
   show (morph drawer)
+  fixLayout drawer
   for each (parts morph) {
-    if (isClass (handler each) 'Block') {
+	h = (handler each)
+    if (isClass h 'Block') {
       for element (parts each) {
         if (isClass (handler element) 'InputDeclaration') {
           show element
         }
       }
-      fixLayout (handler each)
-    } (isClass (handler each) 'Text') {
-      setEditRule (handler each) 'line'
+      fixLayoutNow h
+    } (isClass h 'Text') {
+      setEditRule h 'line'
       setGrabRule each 'ignore'
 
     }
@@ -522,16 +507,18 @@ method showDetails BlockSectionDefinition {
 
 method hideDetails BlockSectionDefinition {
   hide (morph drawer)
+  fixLayout drawer
   for each (parts morph) {
-    if (isClass (handler each) 'Block') {
+	h = (handler each)
+    if (isClass h 'Block') {
       for element (parts each) {
         if (isClass (handler element) 'InputDeclaration') {
           hide element
         }
       }
-      fixLayout (handler each)
-    } (isClass (handler each) 'Text') {
-      setEditRule (handler each) 'static'
+      fixLayoutNow h
+    } (isClass h 'Text') {
+      setEditRule h 'static'
       setGrabRule each 'defer'
     }
   }
@@ -544,7 +531,7 @@ method addLabel BlockSectionDefinition {
   txt = (labelText this 'label')
   setEditRule txt 'line'
   addPart morph (morph txt)
-  redraw drawer
+  fixLayout drawer
   fixLayout this
   page = (page morph)
   if (notNil page) {
@@ -574,15 +561,18 @@ method addInput BlockSectionDefinition {
   setGrabRule (morph inp) 'template'
   addPart (morph inp) (morph typ)
   add (last (getField inp 'labelParts')) typ
-  fixLayout inp
   addPart morph (morph inp)
-  redraw drawer
-  fixLayout this
   raise morph 'updateBlockDefinition' this
 }
 
 method textChanged BlockSectionDefinition {
+  // called editing a text field is complete
   raise morph 'updateBlockDefinition' this
+}
+
+method textEdited BlockSectionDefinition {
+  // called after every character
+  fixLayout this
 }
 
 method addInputSlot BlockSectionDefinition blockSpec slotIndex argNames {
@@ -615,26 +605,13 @@ method addInputSlot BlockSectionDefinition blockSpec slotIndex argNames {
   setGrabRule (morph inp) 'template'
   addPart (morph inp) (morph typ)
   add (last (getField inp 'labelParts')) typ
-  fixLayout inp
+  fixLayoutNow inp
   addPart morph (morph inp)
+  fixLayout this
 }
 
 method labelText BlockSectionDefinition aString {
-  scale = (global 'scale')
-  fontName =  'Verdana Bold'
-  fontSize = (11 * scale)
-  off = (scale / 2)
-  if (global 'stealthBlocks') {
-    labelColor = (gray (stealthLevel 255 0))
-    if ((red labelColor) < 100) {
-      fontName = (first (words fontName))
-      fontSize += (2 * scale)
-    }
-  } else {
-    labelColor = (global 'blockTextColor')
-    if (isNil labelColor) { labelColor = (gray 255) }
-  }
-  lbl = (newText aString fontName fontSize labelColor nil (darker labelColor 80) (off * -1) (off * -1) nil nil nil nil (global 'flatBlocks'))
+  lbl = (blockLabelText aString)
   setGrabRule (morph lbl) 'ignore'
   return lbl
 }
@@ -647,7 +624,10 @@ method specString BlockSectionDefinition {
   for each (parts morph) {
     part = (handler each)
     if (isClass part 'Text') {
-      spec = (join spec delim (text part))
+	  // remove colons from label (colons are reserved for marking optional parameters in spec)
+	  label = (joinStrings (copyWithout (letters (text part)) ':'))
+	  if (label != (text part)) { setText part label }
+      spec = (join spec delim label)
       delim = ' '
     } (isClass part 'Block') { // input
       spec = (join spec delim '_')
@@ -690,43 +670,6 @@ method addInputNamesTo BlockSectionDefinition aList {
   }
 }
 
-
-defineClass InputType morph type
-
-to newInputType type {
-  return (initialize (new 'InputType') type)
-}
-
-method initialize InputType typeString {
-  if (isNil typeString) {typeString = 'auto'}
-  morph = (newMorph this)
-  setTransparentTouch morph true
-  setScale morph 0.8
-  setType this typeString
-  return this
-}
-
-method setType InputType typeString {
-  type = typeString
-  redraw this
-  raise morph 'layoutChanged'
-}
-
-method redraw InputType {
-  setCostume morph (fullCostume (morph (element this)))
-}
-
-method clicked InputType {return false}
-
-method element InputType typeString blockColor  {
-  // adapted from BlockSpec >> inputSlot
-  if (isNil typeString) {typeString = type}
-  if (isNil blockColor) {blockColor = (blockColorForOp (authoringSpecs) 'if')}
-  slotContent = typeString
-  return (newInputSlot slotContent 'static' blockColor)
-}
-
-
 defineClass InputDeclaration morph type typeString default trigger alignment
 
 to newInputDeclaration type default {
@@ -736,7 +679,7 @@ to newInputDeclaration type default {
 method initialize InputDeclaration typeStr defaultValue {
   morph = (newMorph this)
   alignment = (newAlignment 'centered-line' 0 'bounds')
-  setPadding alignment (5 * (global 'scale'))
+  setPadding alignment (2 * (global 'scale'))
   setMorph alignment morph
 
   type = (element this typeStr)
@@ -745,11 +688,27 @@ method initialize InputDeclaration typeStr defaultValue {
   default = defaultValue
   addPart morph (morph type)
 
-  trigger = (downArrowButton (color) (action 'typesMenu' this))
+  trigger = (downArrowButton this (action 'typesMenu' this))
   addPart morph (morph trigger)
 
   fixLayout this
   return this
+}
+
+method downArrowButton InputDeclaration action {
+  // draw down arrow
+  w = (12 * (blockScale))
+  h = (7 * (blockScale))
+  inset = (2 * (blockScale))
+  bm = (newBitmap (w + (2 * inset)) (h + (2 * inset)))
+  fillArrow (newShapeMaker bm) (rect inset inset w h) 'down' (gray 0)
+
+  // create and return button
+  btn = (new 'Trigger' (newMorph) action)
+  setTransparentTouch (morph btn) true
+  setHandler (morph btn) btn
+  replaceCostumes btn bm bm bm
+  return btn
 }
 
 method setType InputDeclaration typeStr defaultValue {
@@ -767,7 +726,7 @@ method setType InputDeclaration typeStr defaultValue {
   setContents type defaultValue
   addPart morph (morph type)
 
-  trigger = (downArrowButton (color) (action 'typesMenu' this))
+  trigger = (downArrowButton this (action 'typesMenu' this))
   addPart morph (morph trigger)
 
   fixLayout this
@@ -793,11 +752,7 @@ method defaultValue InputDeclaration {return default}
 
 method fixLayout InputDeclaration {
   fixLayout alignment
-  block = (ownerThatIsA morph 'Block')
-  if (notNil block) {fixLayout (handler block)}
 }
-
-method layoutChanged InputDeclaration {fixLayout this}
 
 method element InputDeclaration typeStr blockColor  {
   // adapted from BlockSpec >> inputSlot
@@ -819,9 +774,7 @@ method element InputDeclaration typeStr blockColor  {
   }
   if ('bool' == typeStr) {
     slotContent = true
-    if (not (global 'stealthBlocks')) {
-      return (newBooleanSlot true)
-    }
+    return (newBooleanSlot true)
   }
   if ('color' == typeStr) {
     return (newColorSlot)
@@ -835,15 +788,14 @@ method element InputDeclaration typeStr blockColor  {
   if ('var' == typeStr) {
     rep = (toBlock (newReporter 'v' 'v'))
     setGrabRule (morph rep) 'defer'
-    // addHighlight (morph rep) ( 3 * (global 'scale'))
     return rep
   }
   return (newInputSlot slotContent editRule blockColor)
 }
 
 method typesMenu InputDeclaration {
+  // slot types: 'auto' 'num' 'str' 'bool' 'color' 'cmd' 'var' 'menu'
   menu = (menu nil (action 'setType' this) true)
-// slot types: 'auto' 'num' 'str' 'bool' 'color' 'cmd' 'var' 'menu'
   addItem menu 'number/string' 'auto' 'editable number or string'
   addItem menu '' 'bool' 'boolean switch' (fullCostume (morph (element this 'bool')))
   addItem menu '' 'color' 'color patch' (fullCostume (morph (element this 'color')))

@@ -1,9 +1,24 @@
 const chokidar = require('chokidar');
 const { exec } = require('child_process');
+const fs = require('fs');
 
-const watchedSrcs = './runtimes/new-morphic/**';
-// const watchedSrcs = './runtimes/minimal/**';
-const commandToExecute = '/Users/daniel/Library/Developer/Xcode/DerivedData/MacGPBlocks-hjsojqtrcfseoygrklnrdoecdoqj/Build/Products/Debug/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+let watchedSrcs = './runtimes/anamorphic/**';
+
+// App is copied to .build as post-action in xcode (see post-action-copy-app-for-monitor.sh)
+const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+
+if (!fs.existsSync(commandToExecute)) {
+    console.error(`Could not find '${commandToExecute}'\nOpen Xcode and build the app.\n\topen MacGPBlocks.xcodeproj`);
+    process.exit(1);
+}
+
+if (process.env.GP_RUNTIME_DIR) {
+    watchedSrcs = `${process.env.GP_RUNTIME_DIR}**`;
+} else {
+    process.env.GP_RUNTIME_DIR = `${watchedSrcs.replace(/\*+$/, '')}`;
+}
+
+console.log('\x1b[33m%s\x1b[0m', `Monitoring path: >${watchedSrcs}<`, '\x1b[0m'); // yellow
 
 const watcher = chokidar.watch(watchedSrcs, {
     // ignored: /(^|[\/\\])\../, // ignore dotfiles
@@ -13,8 +28,7 @@ const watcher = chokidar.watch(watchedSrcs, {
 
 let command;
 const changeObserver = () => {
-    // if (stats) console.log(`File ${path} changed size to ${stats.size}`);
-    // console.log('path was changed', path);
+    console.log('\x1b[33m%s\x1b[0m', 'Path was changed, restarting...', '\x1b[0m'); // yellow
 
     if (command) {
         command.kill();

@@ -203,6 +203,38 @@ static gp_boolean isGPFile(char *s) {
 
 
 
+static int readLibraryFromDir(char *dirPath, int loadedCount, int maxDepth){
+    char filePath[1024];
+    int loadedFromFolder = 0;
+
+    if(maxDepth == 0){
+        return loadedCount;
+    }
+
+    DIR *dir = opendir(dirPath);
+    if (dir) {
+        struct dirent *entry;
+        while ((entry = readdir(dir))) {
+            if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
+                snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
+                //printf("Loading... %s\n", filePath);
+                parse_runFile(filePath);
+                loadedFromFolder++;
+
+            } else if (DT_DIR == entry->d_type && strcmp (entry->d_name, "..") != 0 && strcmp (entry->d_name, ".") != 0 ){
+                snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
+                loadedFromFolder = readLibraryFromDir(filePath, loadedCount+loadedFromFolder, maxDepth-1);
+            }
+        }
+        closedir(dir);
+    }else{
+        printf("*** path >%s< is not a folder.\n", dirPath);
+        exit(-1);
+    }
+    return loadedCount + loadedFromFolder;
+}
+
+
 static void readLibraryFromFileSystem(gp_boolean runStartup) {
     char libraryDirPath[1024];
     char filePath[1024];
@@ -215,6 +247,7 @@ static void readLibraryFromFileSystem(gp_boolean runStartup) {
     }
 
 #ifdef _WIN32
+#error "Not supported (yet?)"
     char entry[200]; // directory entry name
     WIN32_FIND_DATAW info;
     HANDLE hFind = FindFirstFileW(L"runtime\\lib\\*.gp", &info);
@@ -234,18 +267,9 @@ static void readLibraryFromFileSystem(gp_boolean runStartup) {
     FindClose(hFind);
 #else
     snprintf(filePath, sizeof(filePath), "%sruntime/lib", libraryDirPath);
-    DIR *dir = opendir(filePath);
-    if (dir) {
-        struct dirent *entry;
-        while ((entry = readdir(dir))) {
-            if ((DT_REG == entry->d_type) && isGPFile(entry->d_name)) {
-                snprintf(filePath, sizeof(filePath), "%sruntime/lib/%s", libraryDirPath, entry->d_name);
-                parse_runFile(filePath);
-                loadedCount++;
-            }
-        }
-        closedir(dir);
-    }
+    // Allow folders only on one level depth in runtime/lib/
+    loadedCount = readLibraryFromDir(filePath, 0, 2);
+
 #endif
     printf("Loaded %d library files from %sruntime/lib\n", loadedCount, libraryDirPath);
 
@@ -260,7 +284,6 @@ static void readLibraryFromFileSystem(gp_boolean runStartup) {
     }
 
 }
-
 
 #endif // EMSCRIPTEN
 
