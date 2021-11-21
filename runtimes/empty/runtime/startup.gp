@@ -1,0 +1,2 @@
+log 'hello' 'world' (msecsSinceStart)
+
