@@ -9,6 +9,27 @@
 /* Begin PBXBuildFile section */
 		652876A726D5875100EAB15E /* pathPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876A626D5875100EAB15E /* pathPrims.c */; };
 		652876B426D806F000EAB15E /* httpPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876B326D806F000EAB15E /* httpPrims.c */; };
+		653790CC274C37E200833FD6 /* oop.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4D26BC23EB00A0F189 /* oop.c */; };
+		653790CE274C37E200833FD6 /* gp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4826BC23EB00A0F189 /* gp.c */; };
+		653790CF274C37E200833FD6 /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4626BC23EB00A0F189 /* parse.c */; };
+		653790D0274C37E200833FD6 /* cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5626BC23EB00A0F189 /* cache.c */; };
+		653790D1274C37E200833FD6 /* events.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4B26BC23EB00A0F189 /* events.c */; };
+		653790D3274C37E200833FD6 /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5126BC23EB00A0F189 /* sha2.c */; };
+		653790D5274C37E200833FD6 /* interp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5E26BC23EB00A0F189 /* interp.c */; };
+		653790D6274C37E200833FD6 /* httpPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 652876B326D806F000EAB15E /* httpPrims.c */; };
+		653790D7274C37E200833FD6 /* prims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5326BC23EB00A0F189 /* prims.c */; };
+		653790D8274C37E200833FD6 /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4926BC23EB00A0F189 /* dict.c */; };
+		653790D9274C37E200833FD6 /* embeddedFS.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5B26BC23EB00A0F189 /* embeddedFS.c */; };
+		653790DB274C37E200833FD6 /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5926BC23EB00A0F189 /* sha1.c */; };
+		653790DC274C37E200833FD6 /* mem.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4F26BC23EB00A0F189 /* mem.c */; };
+		653790DD274C37E200833FD6 /* serialPortPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5026BC23EB00A0F189 /* serialPortPrims.c */; };
+		653790DE274C37E200833FD6 /* jpegPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5526BC23EB00A0F189 /* jpegPrims.c */; };
+		653790DF274C37E200833FD6 /* memGC.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F6026BC23EB00A0F189 /* memGC.c */; };
+		653790E1274C37E200833FD6 /* socketPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F5226BC23EB00A0F189 /* socketPrims.c */; };
+		653790E3274C37E200833FD6 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65E0863726BC2D420039B240 /* AppKit.framework */; };
+		653790E4274C37E200833FD6 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 659F213626BC2AFD00A0F189 /* CoreMIDI.framework */; };
+		653790E7274C37E200833FD6 /* runtime in Copy runtime */ = {isa = PBXBuildFile; fileRef = 659F212E26BC288500A0F189 /* runtime */; };
+		653790F4274C396D00833FD6 /* pocPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 653790F3274C396D00833FD6 /* pocPrims.c */; };
 		659F1F6426BC23EB00A0F189 /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4626BC23EB00A0F189 /* parse.c */; };
 		659F1F6526BC23EB00A0F189 /* vectorPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4726BC23EB00A0F189 /* vectorPrims.c */; };
 		659F1F6626BC23EB00A0F189 /* gp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4826BC23EB00A0F189 /* gp.c */; };
@@ -35,6 +56,17 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		653790E6274C37E200833FD6 /* Copy runtime */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				653790E7274C37E200833FD6 /* runtime in Copy runtime */,
+			);
+			name = "Copy runtime";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		659F213126BC289600A0F189 /* Copy runtime */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -51,6 +83,9 @@
 /* Begin PBXFileReference section */
 		652876A626D5875100EAB15E /* pathPrims.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pathPrims.c; sourceTree = "<group>"; };
 		652876B326D806F000EAB15E /* httpPrims.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = httpPrims.c; sourceTree = "<group>"; };
+		653790EB274C37E200833FD6 /* VectorGP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorGP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		653790EC274C37E200833FD6 /* VectorGP-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "VectorGP-Info.plist"; path = "/Users/daniel/workspace/lab/MacGPBlocks/VectorGP-Info.plist"; sourceTree = "<absolute>"; };
+		653790F3274C396D00833FD6 /* pocPrims.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pocPrims.c; sourceTree = "<group>"; };
 		659F1F2626BC1E6900A0F189 /* MacGPBlocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacGPBlocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		659F1F3126BC1E6B00A0F189 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		659F1F4526BC23EB00A0F189 /* oop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oop.h; sourceTree = "<group>"; };
@@ -91,6 +126,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		653790E2274C37E200833FD6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				653790E3274C37E200833FD6 /* AppKit.framework in Frameworks */,
+				653790E4274C37E200833FD6 /* CoreMIDI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		659F1F2326BC1E6900A0F189 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -116,6 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				659F1F2626BC1E6900A0F189 /* MacGPBlocks.app */,
+				653790EB274C37E200833FD6 /* VectorGP.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -126,6 +171,7 @@
 				659F212E26BC288500A0F189 /* runtime */,
 				659F1F4426BC23C300A0F189 /* smallvm */,
 				659F1F3126BC1E6B00A0F189 /* Info.plist */,
+				653790EC274C37E200833FD6 /* VectorGP-Info.plist */,
 			);
 			path = MacGPBlocks;
 			sourceTree = "<group>";
@@ -165,6 +211,7 @@
 				659F1F6326BC23EB00A0F189 /* textAndFontPrims.c */,
 				659F1F4726BC23EB00A0F189 /* vectorPrims.c */,
 				652876B326D806F000EAB15E /* httpPrims.c */,
+				653790F3274C396D00833FD6 /* pocPrims.c */,
 			);
 			path = smallvm;
 			sourceTree = "<group>";
@@ -183,6 +230,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		653790CA274C37E200833FD6 /* VectorGP */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 653790E8274C37E200833FD6 /* Build configuration list for PBXNativeTarget "VectorGP" */;
+			buildPhases = (
+				653790CB274C37E200833FD6 /* Sources */,
+				653790E2274C37E200833FD6 /* Frameworks */,
+				653790E5274C37E200833FD6 /* Resources */,
+				653790E6274C37E200833FD6 /* Copy runtime */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VectorGP;
+			productName = MacGPBlocks;
+			productReference = 653790EB274C37E200833FD6 /* VectorGP.app */;
+			productType = "com.apple.product-type.application";
+		};
 		659F1F2526BC1E6900A0F189 /* MacGPBlocks */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 659F1F3726BC1E6B00A0F189 /* Build configuration list for PBXNativeTarget "MacGPBlocks" */;
@@ -228,11 +293,19 @@
 			projectRoot = "";
 			targets = (
 				659F1F2526BC1E6900A0F189 /* MacGPBlocks */,
+				653790CA274C37E200833FD6 /* VectorGP */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		653790E5274C37E200833FD6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		659F1F2426BC1E6900A0F189 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -243,6 +316,31 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		653790CB274C37E200833FD6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				653790CC274C37E200833FD6 /* oop.c in Sources */,
+				653790F4274C396D00833FD6 /* pocPrims.c in Sources */,
+				653790CE274C37E200833FD6 /* gp.c in Sources */,
+				653790CF274C37E200833FD6 /* parse.c in Sources */,
+				653790D0274C37E200833FD6 /* cache.c in Sources */,
+				653790D1274C37E200833FD6 /* events.c in Sources */,
+				653790D3274C37E200833FD6 /* sha2.c in Sources */,
+				653790D5274C37E200833FD6 /* interp.c in Sources */,
+				653790D6274C37E200833FD6 /* httpPrims.c in Sources */,
+				653790D7274C37E200833FD6 /* prims.c in Sources */,
+				653790D8274C37E200833FD6 /* dict.c in Sources */,
+				653790D9274C37E200833FD6 /* embeddedFS.c in Sources */,
+				653790DB274C37E200833FD6 /* sha1.c in Sources */,
+				653790DC274C37E200833FD6 /* mem.c in Sources */,
+				653790DD274C37E200833FD6 /* serialPortPrims.c in Sources */,
+				653790DE274C37E200833FD6 /* jpegPrims.c in Sources */,
+				653790DF274C37E200833FD6 /* memGC.c in Sources */,
+				653790E1274C37E200833FD6 /* socketPrims.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		659F1F2226BC1E6900A0F189 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -275,6 +373,90 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		653790E9274C37E200833FD6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				INFOPLIST_FILE = "VectorGP-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_CFLAGS = "-fno-implicit-module-maps";
+				OTHER_LDFLAGS = (
+					"-L/usr/local/opt/sdl2/lib/",
+					"-L/usr/local/opt/cairo/lib",
+					"-L/usr/local/opt/jpeg/lib",
+					"-L/usr/local/opt/portaudio/lib",
+					"-lm",
+					"-ldl",
+					"-lz",
+					"-pthread",
+					"-lSDL2",
+					"-lcairo",
+					"-ljpeg",
+					"-lportaudio",
+					"-lcurl",
+					"-L/usr/local/lib",
+					"-lglfw",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
+				USER_HEADER_SEARCH_PATHS = "";
+			};
+			name = Debug;
+		};
+		653790EA274C37E200833FD6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				INFOPLIST_FILE = "VectorGP-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_CFLAGS = "-fno-implicit-module-maps";
+				OTHER_LDFLAGS = (
+					"-L/usr/local/opt/sdl2/lib/",
+					"-L/usr/local/opt/cairo/lib",
+					"-L/usr/local/opt/jpeg/lib",
+					"-L/usr/local/opt/portaudio/lib",
+					"-lm",
+					"-ldl",
+					"-lz",
+					"-pthread",
+					"-lSDL2",
+					"-lcairo",
+					"-ljpeg",
+					"-lportaudio",
+					"-lcurl",
+					"-L/usr/local/lib",
+					"-lglfw",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
+				USER_HEADER_SEARCH_PATHS = "";
+			};
+			name = Release;
+		};
 		659F1F3526BC1E6B00A0F189 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -317,7 +499,11 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = NO_CAMERA;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					NO_CAMERA,
+					GLFW,
+					NO_SDL,
+				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -372,7 +558,11 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = NO_CAMERA;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					NO_CAMERA,
+					GLFW,
+					NO_SDL,
+				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -467,6 +657,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		653790E8274C37E200833FD6 /* Build configuration list for PBXNativeTarget "VectorGP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				653790E9274C37E200833FD6 /* Debug */,
+				653790EA274C37E200833FD6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		659F1F2126BC1E6900A0F189 /* Build configuration list for PBXProject "MacGPBlocks" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

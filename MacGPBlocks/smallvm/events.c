@@ -116,8 +116,45 @@ static void initialize() {
 }
 
 // ***** Entry Point *****
+#ifdef GLFW
 
-#ifdef EMSCRIPTEN
+// GLFW_INCLUDE_GLCOREARB makes the GLFW header include the modern OpenGL
+#define GLFW_INCLUDE_GLCOREARB
+#include <GLFW/glfw3.h>
+
+extern GLFWwindow *window; // from pocPrims
+
+static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
+}
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){
+//    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+//        popup_menu();
+}
+
+OBJ getEvent() {
+    if (!initialized) {
+        initialize();
+
+        glfwSetCursorPosCallback(window, cursorPosCallback);
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
+        //https://www.glfw.org/docs/3.3/window_guide.html#window_events
+        //glfwSetWindowSizeCallback(window, window_size_callback);
+    }
+
+    glfwPollEvents();
+
+    OBJ dict = newDict(15);
+
+    if(glfwWindowShouldClose(window)){
+        dictAtPut(dict, key(_type), key(type_quit));
+        return dict;
+    }
+
+    return nilObj;
+}
+
+#elif defined EMSCRIPTEN
+//#ifdef EMSCRIPTEN
 
 #include <emscripten.h>
 
@@ -247,6 +284,7 @@ OBJ getEvent() {
 	}
 	return dict;
 }
+
 
 #else // SDL version
 

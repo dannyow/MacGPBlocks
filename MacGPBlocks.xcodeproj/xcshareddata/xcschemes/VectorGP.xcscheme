@@ -32,9 +32,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "659F1F2526BC1E6900A0F189"
-               BuildableName = "MacGPBlocks.app"
-               BlueprintName = "MacGPBlocks"
+               BlueprintIdentifier = "653790CA274C37E200833FD6"
+               BuildableName = "VectorGP.app"
+               BlueprintName = "VectorGP"
                ReferencedContainer = "container:MacGPBlocks.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -63,9 +63,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "659F1F2526BC1E6900A0F189"
-            BuildableName = "MacGPBlocks.app"
-            BlueprintName = "MacGPBlocks"
+            BlueprintIdentifier = "653790CA274C37E200833FD6"
+            BuildableName = "VectorGP.app"
+            BlueprintName = "VectorGP"
             ReferencedContainer = "container:MacGPBlocks.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -94,7 +94,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/anamorphic/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_STARTUP_FILE"
@@ -109,7 +109,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/minimal/"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
@@ -124,16 +124,6 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "659F1F2526BC1E6900A0F189"
-            BuildableName = "MacGPBlocks.app"
-            BlueprintName = "MacGPBlocks"
-            ReferencedContainer = "container:MacGPBlocks.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

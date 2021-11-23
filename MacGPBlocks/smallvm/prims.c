@@ -45,7 +45,7 @@ int getPathToRuntimeLibrary(char *path, int pathSize);
 
 // ***** Version Date and Time *****
 
-static char *versionNum = "v268-dev";
+static char *versionNum = "v268-poc";
 static char *versionDate = __DATE__;
 static char *versionTime = __TIME__;
 
@@ -3576,47 +3576,56 @@ void initPrimitiveTable() {
 	int count;
 	PrimEntry *entries = corePrimitives(&count);
 	addPrimitiveSet(entries, count);
+#ifdef GLFW
+    PrimEntry* pocPrimitives(int *count);
+    entries = pocPrimitives(&count);
+    addPrimitiveSet(entries, count);
+#else
 
-#ifndef NO_GRAPHICS
-	PrimEntry* graphicsPrimitives(int *count);
-	entries = graphicsPrimitives(&count);
-	addPrimitiveSet(entries, count);
+    #ifndef NO_GRAPHICS
+        PrimEntry* graphicsPrimitives(int *count);
+        entries = graphicsPrimitives(&count);
+        addPrimitiveSet(entries, count);
 
-	#ifndef NO_CAIRO
-		PrimEntry* vectorPrimitives(int *count);
-		entries = vectorPrimitives(&count);
-		addPrimitiveSet(entries, count);
+        #ifndef NO_CAIRO
+            PrimEntry* vectorPrimitives(int *count);
+            entries = vectorPrimitives(&count);
+            addPrimitiveSet(entries, count);
 
-		PrimEntry* pathPrimitives(int *count);
-		entries = pathPrimitives(&count);
-		addPrimitiveSet(entries, count);
-	#endif // NO_CAIRO
+            PrimEntry* pathPrimitives(int *count);
+            entries = pathPrimitives(&count);
+            addPrimitiveSet(entries, count);
+        #endif // NO_CAIRO
 
-	#ifndef NO_JPEG
-		PrimEntry* jpegPrimitives(int *count);
-		entries = jpegPrimitives(&count);
-		addPrimitiveSet(entries, count);
-	#endif // NO_JPEG
+        #ifndef NO_JPEG
+            PrimEntry* jpegPrimitives(int *count);
+            entries = jpegPrimitives(&count);
+            addPrimitiveSet(entries, count);
+        #endif // NO_JPEG
 
-	#ifndef NO_TEXT
-		PrimEntry* textAndFontPrimitives(int *count);
-		entries = textAndFontPrimitives(&count);
-		addPrimitiveSet(entries, count);
-	#endif // NO_TEXT
+        #ifndef NO_TEXT
+            PrimEntry* textAndFontPrimitives(int *count);
+            entries = textAndFontPrimitives(&count);
+            addPrimitiveSet(entries, count);
+        #endif // NO_TEXT
 
-#endif // NO_GRAPHICS
+    #endif // NO_GRAPHICS
+
+
+    #ifndef NO_SOUND
+        PrimEntry* soundPrimitives(int *count);
+        entries = soundPrimitives(&count);
+        addPrimitiveSet(entries, count);
+    #endif // NO_SOUND
+
+#endif
+
 
 #ifndef NO_SOCKETS
-	PrimEntry* socketPrimitives(int *count);
-	entries = socketPrimitives(&count);
-	addPrimitiveSet(entries, count);
+    PrimEntry* socketPrimitives(int *count);
+    entries = socketPrimitives(&count);
+    addPrimitiveSet(entries, count);
 #endif // NO_SOCKETS
-
-#ifndef NO_SOUND
-	PrimEntry* soundPrimitives(int *count);
-	entries = soundPrimitives(&count);
-	addPrimitiveSet(entries, count);
-#endif // NO_SOUND
 
 // The camera primitives are currently implemented only on MacOS and iOS:
 #if !(defined(MAC) || defined(IOS))
