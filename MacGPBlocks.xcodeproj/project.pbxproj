@@ -408,12 +408,15 @@
 					"-lcurl",
 					"-L/usr/local/lib",
 					"-lglfw",
+					"-L$(SRCROOT)/skia/lib/darwin",
+					"-lskia",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/skia/include";
 			};
 			name = Debug;
 		};
@@ -448,12 +451,15 @@
 					"-lcurl",
 					"-L/usr/local/lib",
 					"-lglfw",
+					"-L$(SRCROOT)/skia/lib/darwin",
+					"-lskia",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/skia/include";
 			};
 			name = Release;
 		};
@@ -464,8 +470,8 @@
 				ARCHS = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -525,8 +531,8 @@
 				ARCHS = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
