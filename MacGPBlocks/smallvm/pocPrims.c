@@ -26,6 +26,8 @@ sk_canvas_t* canvas = NULL;
 static gr_direct_context_t* context = NULL;
 static sk_surface_t* surface = NULL;
 
+static bool needsRepaint = true;
+
 // Used by events.c
 int mouseScale;
 int windowWidth;
@@ -77,7 +79,10 @@ static void initGraphics() {
 
     initialized = true;
 }
-static void repaint() {
+static void repaintIfNeeded() {
+    if(!needsRepaint){
+        return;
+    }
     if (canvas) {
         sk_canvas_flush(canvas);
     }
@@ -104,6 +109,31 @@ static void repaint() {
         }
         sk_canvas_draw_color(canvas, 0xFFFFFFFF, SK_BLEND_MODE_SRCOVER);
     }
+    needsRepaint = false;
+}
+OBJ primSkiaRect(int nargs, OBJ args[]) {
+
+    sk_rect_t rect;
+    float x = intOrFloatArg(0, 0, nargs, args);
+    float y = intOrFloatArg(1, 0, nargs, args);
+    rect.left = x;
+    rect.top = y;
+    rect.right = x + intOrFloatArg(2, 100, nargs, args);
+    rect.bottom = y + intOrFloatArg(3, 100, nargs, args);
+
+    int color = intArg(4, 0xFFFF00FF, nargs, args);
+    sk_paint_t* paint = sk_paint_new();
+    sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
+    sk_paint_set_stroke_width(paint, 4);
+    sk_paint_set_color(paint, color);
+
+    sk_canvas_draw_rect(canvas, &rect, paint);
+
+    sk_paint_delete(paint);
+//    needsRepaint = true;
+
+    return nilObj;
+
 }
 
 OBJ primSkiaDraw(int nargs, OBJ args[]) {
@@ -129,6 +159,8 @@ OBJ primSkiaDraw(int nargs, OBJ args[]) {
     sk_canvas_draw_line(canvas, 200, 0, 200, windowHeight, paint);
 
     sk_paint_delete(paint);
+
+
 
     return nilObj;
 }
@@ -163,6 +195,8 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
     }
 
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
     int actualW, logicalW, actualH, logicalH;
     float contentScaleX, contentScaleY;
     glfwGetWindowSize(window, &logicalW, &logicalH);
@@ -178,7 +212,9 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
         fprintf(stderr, "Failed to create Skia context\n");
         exit(EXIT_FAILURE);
     }
-    repaint();
+    repaintIfNeeded();
+    needsRepaint = true;
+
     return nilObj;
 }
 OBJ primWindowSize(int nargs, OBJ args[]) {
@@ -199,8 +235,7 @@ OBJ primWindowSize(int nargs, OBJ args[]) {
 }
 
 OBJ primNextEvent(int nargs, OBJ args[]) {
-    repaint();
-
+    repaintIfNeeded();
     return getEvent();
 }
 
@@ -208,7 +243,10 @@ OBJ primFillRect(int nargs, OBJ args[]) {
     //return primFailed("Forced trap in primFillRect ");
     return nilObj;
 }
-OBJ primFlipWindowBuffer(int nargs, OBJ args[]) { return nilObj; }
+OBJ primFlipWindowBuffer(int nargs, OBJ args[]) {
+    needsRepaint = true;
+    return nilObj;
+}
 
 OBJ primCloseWindow(int nargs, OBJ args[]) { return nilObj; }
 OBJ primSetFullScreen(int nargs, OBJ args[]) { return nilObj; }
@@ -221,6 +259,7 @@ OBJ primSetCursor(int nargs, OBJ args[]) { return nilObj; }
 PrimEntry graphicsPrimList[] = {
     {"-----", NULL, "Graphics: Skia"},
     {"drawSkiaImage", primSkiaDraw, "Draw the test image using Skia"},
+    {"drawRect", primSkiaRect, "Draw rect x,y,w,h,color"},
 
     {"-----", NULL, "Graphics: Windows"},
     {"openWindow", primOpenWindow, "Open the graphics window. Arguments: [width height tryRetinaFlag title]"},
@@ -247,6 +286,9 @@ PrimEntry graphicsPrimList[] = {
     //    {"setClipboard",    primSetClipboard,            "Set the clipboard to the given string."},
     //    {"showKeyboard",    primShowKeyboard,            "Show or hide the on-screen keyboard on a touchsceen devices. Argument: true or false."},
     {"setCursor", primSetCursor, "Change the mouse pointer appearance. Argument: cursorNumber (0 -> arrow, 3 -> crosshair, 11 -> hand...)"},
+
+//    {"closeAudio",        primNoop,        "Close the audio output driver."},
+
 };
 
 PrimEntry* pocPrimitives(int* primCount) {

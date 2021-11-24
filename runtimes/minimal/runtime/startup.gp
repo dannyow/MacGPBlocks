@@ -1,35 +1,51 @@
-to startup {
 
-    page = (newPage 1000 800)
-    tryRetina = true
-    setDevMode page true
-    setGlobal 'page' page
 
-    open page tryRetina 'Minimal Morphic Example' 
-    plainButton = (newButton 'Click Me' (action  'print' 'Boom') )
-    addPart page plainButton
+defineClass SkiaRect morph left top width height color index
 
-    // Button without handler acts as a toggle button
-    toggleButton = (newButton 'Toggle Me' nil )
-    addPart page toggleButton
-    setPosition (morph toggleButton) 10 50
-
-    // Add scaled up button that can be dragged with mouse
-    scaledPlainButton = (newButton 'LARGE Click Me' (action  'print' 'Boom from LARGE') )
-    addPart page scaledPlainButton
-    setPosition (morph scaledPlainButton) 250 250
-    setScale (morph scaledPlainButton) 2.6
-    setGrabRule (morph scaledPlainButton) 'handle'
-
-    // Text label
-    // to newText aString fontName fontSize color alignment shadowColor shadowOffsetX shadowOffsetY borderX borderY editRule bgColor flat {
-    plainText = (newText 'I''m a text label (try to drag me)' 'SF Compact Rounded Ultralight' (60 * 2) 'left' (color 255))
-    setColor plainText (gray 255) (color 0 255) (color 0 0 255 128)
-    setGrabRule (morph plainText) 'handle'
-    addPart page plainText
-    setPosition (morph plainText) 200 00
-
-    // Start 'run-loop'
-    startSteppingSafely page false
-
+to newSkiaRect x y w h c {
+  return (initialize (new 'SkiaRect') x y w h c)
 }
+method initialize SkiaRect x y w h c {
+  morph = (newMorph this)
+  setPosition morph x y
+  setExtent morph w h
+  color = c
+  return this
+}
+method setIndex SkiaRect i {
+  index = i
+}
+
+method moveBy SkiaRect xDelta yDelta {
+  // left = (left + xDelta)
+  // top = (top + yDelta)
+  //log 'movingBy' xDelta yDelta
+  (moveBy (morph this) xDelta yDelta )
+}
+
+method redraw SkiaRect {
+  //setCostume morph (newBitmap (width (bounds morph)) (height (bounds morph)) (color))
+  m = (morph this)
+  r = (bounds m)
+  //log 'redraw' index 'bounds:' (toString (bounds m))
+ // drawSkiaImage
+ drawRect (left r) (top r) (width r) (height r) color
+}
+
+method pixelARGB Color {
+  return (+ (a << 24) ((r & 255) << 16) ((g & 255) << 8) (b & 255))
+}
+
+to startup {
+  
+  page = (newPage 600 400)
+  open page
+  for i 250 {
+    r = (newSkiaRect (rand 1 500) (rand 1 400) (rand 10 100) (rand 10 100) (pixelARGB (randomColor)))
+    (setIndex r  i)
+    addSchedule page (schedule (action 'moveBy' r (rand -5 5) (rand -5 5)) (rand 0 100) -1)
+    addPart (morph page) (morph r)
+  }
+  startStepping page
+}
+

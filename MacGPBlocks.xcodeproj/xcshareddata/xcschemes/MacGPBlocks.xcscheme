@@ -94,7 +94,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/anamorphic/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_STARTUP_FILE"
@@ -109,7 +109,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/minimal/"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
