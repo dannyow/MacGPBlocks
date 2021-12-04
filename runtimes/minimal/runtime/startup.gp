@@ -20,7 +20,28 @@ method moveBy SkiaRect xDelta yDelta {
   // left = (left + xDelta)
   // top = (top + yDelta)
   //log 'movingBy' xDelta yDelta
+  pageBounds = (bounds (morph (global 'page')))
+
   (moveBy (morph this) xDelta yDelta )
+
+  m = (morph this)
+  b = (bounds m)
+  if ( (left b) <= 0 ) {
+    (setLeft m ((right pageBounds ) / 2))
+  }
+
+  if ( (left b) > ((right pageBounds ) / 2) ) {
+    (setLeft m 0)
+  }
+
+  if ( (top b) <= 0 ) {
+    (setTop m ((bottom pageBounds ) / 2))
+  }
+
+  if ( (top b) > ((bottom pageBounds ) / 2) ) {
+    (setTop m 0) //(rand 0 ( (height pageBounds) / 2) )
+  }
+
 }
 
 method redraw SkiaRect {
@@ -59,12 +80,13 @@ to startup {
   // return;
   page = (newPage 600 400)
   open page
-
+// setGlobal 'page' page
   for i 250 {
     r = (newSkiaRect (rand 1 500) (rand 1 400) (rand 10 100) (rand 10 100) (pixelARGB (randomColor)))
     (setIndex r  i)
     //if (or (i == 10) (i == 30) ) {
       addSchedule page (schedule (action 'moveBy' r (rand -5 5) (rand -5 5)) (rand 0 100) -1)
+       //addSchedule page (schedule (action 'moveBy' r -5 0) (rand 0 100) -1)
     //}
     
     addPart (morph page) (morph r)
