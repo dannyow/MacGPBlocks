@@ -1117,7 +1117,7 @@ method fullDrawOn Morph aContext {
 
   if shouldRedraw {
 	redraw handler
-	shouldRedraw = false
+	//shouldRedraw = false
   }
   if costumeChanged {
 	transformedCostume = nil

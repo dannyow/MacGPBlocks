@@ -36,6 +36,11 @@ int windowHeight;
 #define TODO(s) printf("TODO: " s "(%s:%d)\n", __FILE__, __LINE__)
 #define WARN(s) printf("WARN: " s "(%s:%d)\n", __FILE__, __LINE__)
 
+
+int frames = 0;
+double t, t0, fps;
+char title_string[20];
+
 static gr_direct_context_t* makeSkiaContext() {
     const gr_glinterface_t* interface = gr_glinterface_create_native_interface();
     gr_direct_context_t* context = gr_direct_context_make_gl(interface);
@@ -79,6 +84,7 @@ static void initGraphics() {
 
     initialized = true;
 }
+
 static void repaintIfNeeded() {
     if(!needsRepaint){
         return;
@@ -108,9 +114,24 @@ static void repaintIfNeeded() {
             sk_canvas_scale(canvas, contentScaleX, contentScaleY);
         }
         sk_canvas_draw_color(canvas, 0xFFFFFFFF, SK_BLEND_MODE_SRCOVER);
+
+        ///
+        t = glfwGetTime();
+
+        if((t - t0) > 1.0 || frames == 0)
+        {
+            fps = (double)frames / (t - t0);
+            sprintf(title_string, "FPS: %.1f", fps);
+            glfwSetWindowTitle(window, title_string);
+            t0 = t;
+            frames = 0;
+        }
+        frames ++;
+        ///
     }
     needsRepaint = false;
 }
+
 OBJ primSkiaRect(int nargs, OBJ args[]) {
 
     sk_rect_t rect;
@@ -124,10 +145,11 @@ OBJ primSkiaRect(int nargs, OBJ args[]) {
     int color = intArg(4, 0xFFFF00FF, nargs, args);
     sk_paint_t* paint = sk_paint_new();
     sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
-    sk_paint_set_stroke_width(paint, 4);
+    sk_paint_set_stroke_width(paint, 2);
     sk_paint_set_color(paint, color);
 
     sk_canvas_draw_rect(canvas, &rect, paint);
+
 
     sk_paint_delete(paint);
 //    needsRepaint = true;
@@ -159,8 +181,6 @@ OBJ primSkiaDraw(int nargs, OBJ args[]) {
     sk_canvas_draw_line(canvas, 200, 0, 200, windowHeight, paint);
 
     sk_paint_delete(paint);
-
-
 
     return nilObj;
 }
