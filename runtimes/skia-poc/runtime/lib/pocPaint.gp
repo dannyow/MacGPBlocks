@@ -65,11 +65,11 @@ method drawBresenhamLine Paint x0 y0 x1 y1 {
 }
 
 method setup Paint {
-  closeWindow
+//   closeWindow
   openWindow
   addButtons this
   drawButtons this
-  drawButtons this // draw buttons in offline buffer, too
+// drawButtons this // draw buttons in offline buffer, too
   drawing = false
   mouseWasDown = false 
 }
@@ -78,6 +78,7 @@ method handleUserInput Paint {
   evt = (nextEvent)
   while (notNil evt) {
     evtType = (at evt 'type')
+    log 'Event:' evtType  (at evt 'x') (at evt 'y')
 	if ('mouseDown' == evtType) {
       mouseX = (at evt 'x')
       mouseY = (at evt 'y')
@@ -92,6 +93,9 @@ method handleUserInput Paint {
       mouseY = (at evt 'y')
 	  drawing = false
 	}
+    if ('quit' == evtType) {
+        exit
+    }
     evt = (nextEvent)
   }
 }
@@ -101,6 +105,7 @@ method handleMouseDown Paint evt {
     b = (at colorButtons i)
     if (mouseInButton this b) {
       drawColor = (color (at b 5) (at b 6) (at b 7))
+      log 'got color'
 	  return
 	}
   }

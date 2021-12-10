@@ -259,19 +259,65 @@ OBJ primNextEvent(int nargs, OBJ args[]) {
     return getEvent();
 }
 
+static sk_color_t kErrorColorMarker = 0xFFFF0000;
+static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha){
+    // Set the color for the next drawing operation.
+    // Set the renderer's draw color (for texture drawing)
+    // and the globals rgb and alpha (for bitmap drawing).
+    int rgb = 0;
+    int alpha = 255;
+    int words = objWords(colorObj);
+    if (words < 3) {
+        WARN("could to create a color value");
+        return kErrorColorMarker;
+    }
+    int r = isInt(FIELD(colorObj, 0)) ? obj2int(FIELD(colorObj, 0)) : 0;
+    int g = isInt(FIELD(colorObj, 1)) ? obj2int(FIELD(colorObj, 1)) : 0;
+    int b = isInt(FIELD(colorObj, 2)) ? obj2int(FIELD(colorObj, 2)) : 0;
+    int a = ((words > 3) && isInt(FIELD(colorObj, 3))) ? obj2int(FIELD(colorObj, 3)) : 255;
+    r = clip(r, 0, 255);
+    g = clip(g, 0, 255);
+    b = clip(b, 0, 255);
+    a = ignoreAlpha ? 255 : clip(a, 0, 255);
+    rgb = (r << 16) | (g << 8) | b;
+    alpha = a;
+
+    return (a<<24) | rgb;
+}
+static sk_rect_t makeRect(int x, int y, int w, int h){
+    return (sk_rect_t){.left=x, .top=y, .right=x+w, .bottom= y+h};
+}
+
 OBJ primFillRect(int nargs, OBJ args[]) {
+    if (nargs < 2) return notEnoughArgsFailure();
+    if (!initialized) initGraphics();
+    //OBJ _unused = args[0];// textureOrBitmap - unused here
+
+    sk_color_t color = makeColorFromObj(args[1], false);
+    sk_rect_t rect = makeRect(intOrFloatArg(2, 0, nargs, args), intOrFloatArg(3, 0, nargs, args),
+                              intOrFloatArg(4, 100, nargs, args), intOrFloatArg(5, 100, nargs, args));
+
+    sk_paint_t* paint = sk_paint_new();
+    sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
+    sk_paint_set_color(paint, color);
+    //printf("Drawing rect color : %x, rect{%f, %f, %f, %f}\n", color, rect.top, rect.left, (rect.right - rect.left), (rect.top-rect.bottom));
+    sk_canvas_draw_rect(canvas, &rect, paint);
+    sk_paint_delete(paint);
+    needsRepaint = true;
+
     //return primFailed("Forced trap in primFillRect ");
     return nilObj;
 }
 OBJ primFlipWindowBuffer(int nargs, OBJ args[]) {
     needsRepaint = true;
+    repaintIfNeeded();
+    //printf("redrawing... \n");
     return nilObj;
 }
 
 OBJ primCloseWindow(int nargs, OBJ args[]) { return nilObj; }
 OBJ primSetFullScreen(int nargs, OBJ args[]) { return nilObj; }
 OBJ primSetWindowTitle(int nargs, OBJ args[]) { return nilObj; }
-
 OBJ primSetCursor(int nargs, OBJ args[]) { return nilObj; }
 
 // ***** Graphics Primitive Lookup *****
