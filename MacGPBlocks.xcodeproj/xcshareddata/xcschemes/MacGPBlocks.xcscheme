@@ -109,12 +109,17 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/minimal/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/empty/"
             isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/skia-poc/"
+            isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>

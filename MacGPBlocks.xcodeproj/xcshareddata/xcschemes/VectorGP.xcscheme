@@ -14,9 +14,9 @@
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "659F1F2526BC1E6900A0F189"
-                     BuildableName = "MacGPBlocks.app"
-                     BlueprintName = "MacGPBlocks"
+                     BlueprintIdentifier = "653790CA274C37E200833FD6"
+                     BuildableName = "VectorGP.app"
+                     BlueprintName = "VectorGP"
                      ReferencedContainer = "container:MacGPBlocks.xcodeproj">
                   </BuildableReference>
                </EnvironmentBuildable>
@@ -109,12 +109,17 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/minimal/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/empty/"
             isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "GP_RUNTIME_DIR"
+            value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/skia-poc/"
+            isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
