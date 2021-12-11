@@ -5,7 +5,9 @@ const fs = require('fs');
 let watchedSrcs = './runtimes/anamorphic/**';
 
 // App is copied to .build as post-action in xcode (see post-action-copy-app-for-monitor.sh)
-const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+// const commandToExecute = '.build/mac_gp';
+// const commandToExecute = '.build/MacGPBlocks.app/Contents/MacOS/MacGPBlocks';
+const commandToExecute = '.build/VectorGP.app/Contents/MacOS/VectorGP';
 
 if (!fs.existsSync(commandToExecute)) {
     console.error(`Could not find '${commandToExecute}'\nOpen Xcode and build the app.\n\topen MacGPBlocks.xcodeproj`);

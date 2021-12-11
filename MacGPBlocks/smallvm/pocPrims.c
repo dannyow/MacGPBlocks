@@ -113,12 +113,13 @@ static void repaintIfNeeded() {
         if (contentScaleX != 1.0 || contentScaleY != 1.0) {
             sk_canvas_scale(canvas, contentScaleX, contentScaleY);
         }
-        sk_canvas_draw_color(canvas, 0xFFFFFFFF, SK_BLEND_MODE_SRCOVER);
+        sk_color_t bgColor = 0xFFF0F0F0;
+        sk_canvas_draw_color(canvas, bgColor, SK_BLEND_MODE_SRCOVER);
 
         ///
         t = glfwGetTime();
 
-        if((t - t0) > 1.0 || frames == 0)
+        if((t - t0) > 0.1 || frames == 0)
         {
             fps = (double)frames / (t - t0);
             sprintf(title_string, "FPS: %.1f", fps);
@@ -300,18 +301,57 @@ OBJ primFillRect(int nargs, OBJ args[]) {
     sk_paint_t* paint = sk_paint_new();
     sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
     sk_paint_set_color(paint, color);
-    //printf("Drawing rect color : %x, rect{%f, %f, %f, %f}\n", color, rect.top, rect.left, (rect.right - rect.left), (rect.top-rect.bottom));
+    //printf("Drawing rect color : %x, rect{%f, %f, %f, %f}\n", color, rect.left, rect.top, (rect.right - rect.left), (rect.bottom-rect.top));
     sk_canvas_draw_rect(canvas, &rect, paint);
     sk_paint_delete(paint);
-    needsRepaint = true;
+//    needsRepaint = true;
 
     //return primFailed("Forced trap in primFillRect ");
     return nilObj;
 }
+
+OBJ prinDrawPath(int nargs, OBJ args[]) {
+    if (nargs < 3) return notEnoughArgsFailure();
+
+    sk_color_t color = makeColorFromObj(args[0], false);
+    float strokeWidth = intOrFloatArg(1, 1.0, nargs, args);
+    OBJ points = args[2];
+    if (NOT_CLASS(points, ArrayClass)) {
+        return primFailed("Bad path, a list of x,y coordinates is expected");
+    }
+
+    int count = WORDS(points);
+    if(count % 2 != 0){
+        return primFailed("Bad path, not even number of points");
+    }
+
+    sk_paint_t* paint = sk_paint_new();
+    sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
+    sk_paint_set_color(paint, color);
+    sk_paint_set_stroke_width(paint, strokeWidth);
+    sk_paint_set_stroke_cap(paint, SK_STROKE_CAP_ROUND);
+    sk_paint_set_stroke_join(paint, SK_STROKE_JOIN_ROUND);
+
+    sk_path_t *path = sk_path_new();
+    sk_path_move_to(path, evalFloat(FIELD(points, 0)), evalFloat(FIELD(points, 1)));
+
+    int i = 2; // first two points are already consumed by sk_path_move_to
+    while (i < count) {
+        int ix = i++;
+        int iy = i++;
+        sk_path_line_to(path, evalFloat(FIELD(points, ix)), evalFloat(FIELD(points, iy)));
+    }
+    sk_canvas_draw_path(canvas, path, paint);
+
+    sk_path_delete(path);
+    sk_paint_delete(paint);
+
+    return nilObj;
+}
+
 OBJ primFlipWindowBuffer(int nargs, OBJ args[]) {
     needsRepaint = true;
     repaintIfNeeded();
-    //printf("redrawing... \n");
     return nilObj;
 }
 
@@ -343,6 +383,7 @@ PrimEntry graphicsPrimList[] = {
     //    {"updateTexture",    primUpdateTexture,            "Update the given texture from the given bitmap. Arguments: texture bitmap"},
     {"-----", NULL, "Graphics: Drawing"},
     {"fillRect", primFillRect, "Draw a rectangle. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap color [x y width height blendMode]."},
+    {"drawPath", prinDrawPath, "TODO:"},
     //    {"drawBitmap",        primDrawBitmap,                "Draw a bitmap. Draw to window buffer if textureOrBitmap is nil. Arguments: textureOrBitmap srcBitmap [x y alpha blendMode clipRect]"},
     //    {"warpBitmap",        primWarpBitmap,                "Scaled and/or rotate a bitmap. Arguments: dstBitmap srcBitmap [centerX centerY scaleX scaleY rotation]"},
     //    {"drawLineOnBitmap", primDrawLineOnBitmap,        "Draw a line on a bitmap. Only 1-pixel anti-aliased lines are supported. Arguments: dstBitmap x1 y1 x2 y2 [color lineWidth antiAliasFlag]"},

@@ -125,34 +125,62 @@ static void initialize() {
 extern GLFWwindow *window; // from pocPrims
 
 typedef enum  {
-    EventTypeUnset         = 0x0000,
+    EventTypeUnset         = 0x00,
 
-    EventTypeLeftMouseDown = 0x0001,
-    EventTypeLeftMouseUp   = 0x0002,
+    EventTypeLeftMouseDown = 0x01,
+    EventTypeLeftMouseUp   = 0x02,
 
-    EventTypeMouseMoved    = 0x0100,
+    EventTypeMouseMoved    = 0x10,
 } EventType;
 
-int lastEvent = EventTypeUnset;
-double lastMouseX = 0;
-double lastMouseY = 0;
+typedef struct {
+    EventType type;
+    double mouseX;
+    double mouseY;
+} Event;
+
+#define EVENTS_BUFFER_SIZE 10
+int eventsBufferIndex = -1;
+Event eventsBuffer[EVENTS_BUFFER_SIZE];
+
 
 static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
-    lastEvent =  EventTypeMouseMoved;
 
-    lastMouseX = xpos;
-    lastMouseY = ypos;
+    if(eventsBufferIndex == EVENTS_BUFFER_SIZE){
+        printf("WARNING Events buffer size maxed out");
+        return;
+    }
+
+    Event event = {.type = EventTypeMouseMoved, .mouseX = xpos, .mouseY = ypos};
+    Event lastEvent = eventsBuffer[eventsBufferIndex];
+    // for consecutive mouse move events simply store one in the buffer and update mouse position
+    if(lastEvent.type != event.type) {
+        eventsBufferIndex++;
+    }
+
+    eventsBuffer[eventsBufferIndex]  = event;
 }
 static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){
    // printf("🕹🕹mouseButtonCallback: button: %d action: %d\n", button, action);
+    if(eventsBufferIndex == EVENTS_BUFFER_SIZE){
+        printf("WARNING Events buffer size maxed out");
+        return;
+    }
+
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    Event event = {.type = EventTypeUnset, .mouseX = xpos, .mouseY = ypos};
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-        lastEvent =  EventTypeLeftMouseDown;
-        return;
-    }   
+        event.type = EventTypeLeftMouseDown;
+    }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
-        lastEvent =  EventTypeLeftMouseUp;
-        return;
+        event.type =  EventTypeLeftMouseUp;
+    }
+
+    if(event.type != EventTypeUnset){
+        eventsBufferIndex++;
+        eventsBuffer[eventsBufferIndex]  = event;
     }
 }
 
@@ -175,30 +203,28 @@ OBJ getEvent() {
         return dict;
     }
 
-    //if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
-//    printf("Event: %x (mouse: %f, %f)\n", lastEvent, lastMouseY, lastMouseY);
+    if(eventsBufferIndex > -1){
+        Event event = eventsBuffer[eventsBufferIndex];
+        eventsBufferIndex--;
 
-    if(lastEvent==EventTypeLeftMouseUp || lastEvent == EventTypeLeftMouseDown){
-        dictAtPut(dict, key(_type), key((lastEvent == EventTypeLeftMouseDown) ? type_mousedown : type_mouseup));
-        dictAtPut(dict, key(_x), int2obj((int)lastMouseX));
-        dictAtPut(dict, key(_y), int2obj((int)lastMouseY));
-        dictAtPut(dict, key(_button), int2obj(0)); // non-zero is right button
-//        dictAtPut(dict, key(_button), int2obj(evt[3] ? 3 : 0)); // non-zero is right button
-        //dictAtPut(dict, key(_keymodifiers), int2obj(evt[4]));
+        if(event.type==EventTypeLeftMouseUp || event.type == EventTypeLeftMouseDown){
+            dictAtPut(dict, key(_type), key((event.type == EventTypeLeftMouseDown) ? type_mousedown : type_mouseup));
+            dictAtPut(dict, key(_x), int2obj((int)event.mouseX));
+            dictAtPut(dict, key(_y), int2obj((int)event.mouseY));
+            dictAtPut(dict, key(_button), int2obj(0)); // non-zero is right button
+            //dictAtPut(dict, key(_keymodifiers), int2obj(evt[4]));
 
-       // printf("🕹Event: %s (mouse: %f, %f)\n", (lastEvent == EventTypeLeftMouseUp ? "mouseUp" : "mouseDown"), lastMouseY, lastMouseY);
+            // printf("🕹Event: %s (mouse: %f, %f)\n", (lastEvent == EventTypeLeftMouseUp ? "mouseUp" : "mouseDown"), lastMouseY, lastMouseY);
+            return dict;
+        }
+        if(event.type == EventTypeMouseMoved){
+            dictAtPut(dict, key(_type), key(type_mousemove));
+            dictAtPut(dict, key(_x), int2obj((int)event.mouseX));
+            dictAtPut(dict, key(_y), int2obj((int)event.mouseY));
 
-        lastEvent = EventTypeUnset;
-        return dict;
-    }
+            return dict;
+        }
 
-    if(lastEvent == EventTypeMouseMoved){
-        dictAtPut(dict, key(_type), key(type_mousemove));
-        dictAtPut(dict, key(_x), int2obj((int)lastMouseX));
-        dictAtPut(dict, key(_y), int2obj((int)lastMouseY));
-
-        lastEvent = EventTypeUnset;
-        return dict;
     }
 
     return nilObj;

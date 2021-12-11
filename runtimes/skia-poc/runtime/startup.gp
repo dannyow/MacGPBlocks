@@ -1,5 +1,5 @@
 
-//run (new 'Sketch')
-run (new 'Paint')
+run (new 'Sketch')
+// run (new 'Paint')
 
 
