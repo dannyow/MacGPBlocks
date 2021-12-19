@@ -94,7 +94,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/anamorphic/"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GP_RUNTIME_STARTUP_FILE"
@@ -119,7 +119,7 @@
          <EnvironmentVariable
             key = "GP_RUNTIME_DIR"
             value = "/Users/daniel/workspace/lab/MacGPBlocks/runtimes/skia-poc/"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
