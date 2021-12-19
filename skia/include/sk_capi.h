@@ -656,7 +656,7 @@ SK_C_API void sk_fontstyle_delete(sk_font_style_t* fs);
 SK_C_API sk_font_style_slant_t sk_fontstyle_get_slant(const sk_font_style_t* fs);
 SK_C_API int sk_fontstyle_get_weight(const sk_font_style_t* fs);
 SK_C_API int sk_fontstyle_get_width(const sk_font_style_t* fs);
-SK_C_API sk_font_style_t* sk_fontstyle_new(int weight, int width, sk_font_style_slant_t slant);
+SK_C_API sk_font_style_t* sk_fontstyle_new(sk_font_style_weight_t weight, sk_font_style_width_t width, sk_font_style_slant_t slant);
 
 // ===== Functions from include/core/SkImage.h =====
 SK_C_API sk_data_t* sk_image_encode_specific(const sk_image_t* cimage, sk_encoded_image_format_t encoder, int quality);
@@ -846,6 +846,27 @@ SK_C_API sk_font_style_t* sk_typeface_get_fontstyle(const sk_typeface_t* typefac
 SK_C_API int sk_typeface_get_units_per_em(const sk_typeface_t* typeface);
 SK_C_API bool sk_typeface_is_fixed_pitch(const sk_typeface_t* typeface);
 SK_C_API void sk_typeface_unref(sk_typeface_t* typeface);
+
+
+// === Experimental Extras
+
+void sk_surface_flush_and_submit(sk_surface_t* surface, bool syncCpu);
+
+// ===== Functions from include/core/SkPictureRecorder.h =====
+typedef struct sk_picture_recorder_t sk_picture_recorder_t;
+typedef struct sk_picture_t sk_picture_t;
+
+SK_C_API sk_picture_recorder_t* sk_picture_recorder_new(void);
+SK_C_API void sk_picture_recorder_delete(sk_picture_recorder_t* recorder);
+SK_C_API sk_canvas_t* sk_picture_recorder_begin_recording(sk_picture_recorder_t* recorder, const sk_rect_t* bounds);
+SK_C_API sk_picture_t* sk_picture_recorder_end_recording(sk_picture_recorder_t* recorder);
+SK_C_API void sk_picture_ref(sk_picture_t* picture);
+SK_C_API void sk_picture_unref(sk_picture_t* picture);
+
+SK_C_API void sk_canvas_draw_picture(sk_canvas_t * ccanvas, const sk_picture_t* cpicture, const sk_matrix_t* cmatrix, const sk_paint_t* cpaint);
+
+// ===== Advanced Text Shaping =====
+SK_C_API sk_text_blob_t* sk_shaper_shape_text_for_width(float textWidth, const char* utfString, const sk_font_t* cfont, const sk_point_t* margin);
 
 #ifdef __cplusplus
 }

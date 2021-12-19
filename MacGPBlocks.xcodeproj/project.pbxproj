@@ -30,6 +30,7 @@
 		653790E4274C37E200833FD6 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 659F213626BC2AFD00A0F189 /* CoreMIDI.framework */; };
 		653790E7274C37E200833FD6 /* runtime in Copy runtime */ = {isa = PBXBuildFile; fileRef = 659F212E26BC288500A0F189 /* runtime */; };
 		653790F4274C396D00833FD6 /* pocPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 653790F3274C396D00833FD6 /* pocPrims.c */; };
+		658A6F5F276F553900AD74FA /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 658A6F5E276F553900AD74FA /* Metal.framework */; };
 		659F1F6426BC23EB00A0F189 /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4626BC23EB00A0F189 /* parse.c */; };
 		659F1F6526BC23EB00A0F189 /* vectorPrims.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4726BC23EB00A0F189 /* vectorPrims.c */; };
 		659F1F6626BC23EB00A0F189 /* gp.c in Sources */ = {isa = PBXBuildFile; fileRef = 659F1F4826BC23EB00A0F189 /* gp.c */; };
@@ -86,6 +87,7 @@
 		653790EB274C37E200833FD6 /* VectorGP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorGP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		653790EC274C37E200833FD6 /* VectorGP-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "VectorGP-Info.plist"; path = "/Users/daniel/workspace/lab/MacGPBlocks/VectorGP-Info.plist"; sourceTree = "<absolute>"; };
 		653790F3274C396D00833FD6 /* pocPrims.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pocPrims.c; sourceTree = "<group>"; };
+		658A6F5E276F553900AD74FA /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		659F1F2626BC1E6900A0F189 /* MacGPBlocks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacGPBlocks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		659F1F3126BC1E6B00A0F189 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		659F1F4526BC23EB00A0F189 /* oop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = oop.h; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				653790E3274C37E200833FD6 /* AppKit.framework in Frameworks */,
+				658A6F5F276F553900AD74FA /* Metal.framework in Frameworks */,
 				653790E4274C37E200833FD6 /* CoreMIDI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -219,6 +222,7 @@
 		659F213526BC2AFD00A0F189 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				658A6F5E276F553900AD74FA /* Metal.framework */,
 				65E0863726BC2D420039B240 /* AppKit.framework */,
 				65E0863426BC2D270039B240 /* Foundation.framework */,
 				659F213826BC2C4D00A0F189 /* Cocoa.framework */,
@@ -410,6 +414,7 @@
 					"-lglfw",
 					"-L$(SRCROOT)/skia/lib/darwin",
 					"-lskia",
+					"-lskshaper",
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
@@ -453,6 +458,7 @@
 					"-lglfw",
 					"-L$(SRCROOT)/skia/lib/darwin",
 					"-lskia",
+					"-lskshaper",
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "dannyow.gp-blocks.MacGPBlocks";
