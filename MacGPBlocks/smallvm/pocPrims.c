@@ -80,6 +80,7 @@ static void initGraphics() {
         exit(EXIT_FAILURE);
     }
 
+    glfwWindowHintString(GLFW_COCOA_FRAME_NAME, "GPWindow");
     atexit(exitHandler);
 
     initialized = true;
