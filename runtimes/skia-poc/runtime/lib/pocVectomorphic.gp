@@ -84,7 +84,7 @@ method mouseExited VMorph {
 // #endregion
 
 // #region VBox
-defineClass VBox morph backgroundColor borderColor borderWidth 
+defineClass VBox morph backgroundColor borderColor borderWidth highlighted
 to newVBox bounds {
     box = (new 'VBox' nil (withAlpha (randomColor) 200) (randomColor) 2.0)
 
@@ -96,21 +96,52 @@ to newVBox bounds {
     return box
 }
 method acceptsEvents VBox { return true }
-method draw VBox bounds {
-    // drawFilledRect (randomColor) (bounds morph)
-    drawFilledRect backgroundColor (bounds morph)
-}
 
+// Use model approach
+method draw VBox bounds {
+    color = backgroundColor
+    rect = bounds
+    if (highlighted == true){
+        alpha = (alpha backgroundColor)
+        color = (withAlpha color (alpha + 50))
+        rect = (insetBy bounds 15)
+    }
+    drawFilledRect color rect
+}
 method mouseEntered VBox {
-    alpha = (alpha backgroundColor)
-    backgroundColor = (withAlpha backgroundColor (alpha + 50))
+    highlighted = true
     setNeedsDisplay morph
 }
 method mouseExited VBox {
-    alpha = (alpha backgroundColor)
-    backgroundColor = (withAlpha backgroundColor (alpha - 50))
+    highlighted = false
     setNeedsDisplay morph
 }
+
+// Use more direct approach
+// method draw VBox bounds {
+//     // drawFilledRect (randomColor) (bounds morph)
+//     drawFilledRect backgroundColor (bounds morph)
+// }
+// method mouseEntered VBox {
+//     alpha = (alpha backgroundColor)
+//     backgroundColor = (withAlpha backgroundColor (alpha + 50))
+
+//     insetBounds = (insetBy (bounds morph) 15)
+//     (setBounds morph insetBounds)
+
+//     setNeedsDisplay morph
+// }
+// method mouseExited VBox {
+//     alpha = (alpha backgroundColor)
+//     backgroundColor = (withAlpha backgroundColor (alpha - 50))
+    
+//     outsetBounds = (insetBy (bounds morph) -15)
+//     (setBounds morph outsetBounds)
+
+//     setNeedsDisplay morph
+// }
+///////
+
 // #endregion
 
 
@@ -150,6 +181,8 @@ method processMouseMove VHandController {
 
     newMorphsUnderMouse = (collectChildrenAt rootMorph mouseX mouseY (list))
     oldMorphsUnderMouse = (copy morphsUnderMouse)
+
+   //log 'old:' (toString oldMorphsUnderMouse) 'new:' (toString newMorphsUnderMouse)
 
     for m newMorphsUnderMouse {
         if (contains oldMorphsUnderMouse m) {
@@ -252,10 +285,8 @@ method doOneCycle VWorld {
 
     sleepTime = (max 5 (15 - (msecs startTime)))
     sleep sleepTime
-    // sleep 1000
+    // sleep 500
 }
-
-
 
 method interactionLoop VWorld {
     while true { doOneCycle this }
