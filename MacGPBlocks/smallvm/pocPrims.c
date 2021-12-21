@@ -134,7 +134,7 @@ static void repaintIfNeeded() {
     needsRepaint = false;
 }
 
-OBJ primSkiaRect(int nargs, OBJ args[]) {
+OBJ primDrawRect(int nargs, OBJ args[]) {
 
     sk_rect_t rect;
     float x = intOrFloatArg(0, 0, nargs, args);
@@ -150,16 +150,18 @@ OBJ primSkiaRect(int nargs, OBJ args[]) {
     sk_paint_set_stroke_width(paint, 2);
     sk_paint_set_color(paint, color);
 
+    sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_OUTER, 2 * 3.4, false);
+    sk_paint_set_maskfilter(paint, filter);
+
     sk_canvas_draw_rect(canvas, &rect, paint);
 
-
+    sk_maskfilter_unref(filter);
     sk_paint_delete(paint);
 //    needsRepaint = true;
 
     return nilObj;
 
 }
-
 OBJ primSkiaDraw(int nargs, OBJ args[]) {
     if (!canvas) {
         WARN("No canvas?");
@@ -299,12 +301,28 @@ OBJ primFillRect(int nargs, OBJ args[]) {
     sk_rect_t rect = makeRect(intOrFloatArg(2, 0, nargs, args), intOrFloatArg(3, 0, nargs, args),
                               intOrFloatArg(4, 100, nargs, args), intOrFloatArg(5, 100, nargs, args));
 
+    //FIXME: for now we are using the first argument as shadowFlag (normally that was a texture obj)
+    bool addShadow = args[0] != nilObj;
+
     sk_paint_t* paint = sk_paint_new();
     sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
     sk_paint_set_color(paint, color);
+
     //printf("Drawing rect color : %x, rect{%f, %f, %f, %f}\n", color, rect.left, rect.top, (rect.right - rect.left), (rect.bottom-rect.top));
     sk_canvas_draw_rect(canvas, &rect, paint);
+
+    if(addShadow){
+        sk_paint_set_color(paint, 0x80000000); // 0x1E circa matches 0.12
+
+        sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_OUTER, 4 * 2 * 3.4, false);
+        sk_paint_set_maskfilter(paint, filter);
+
+        sk_canvas_draw_rect(canvas, &rect, paint);
+
+        sk_maskfilter_unref(filter);
+    }
     sk_paint_delete(paint);
+
 //    needsRepaint = true;
 
     //return primFailed("Forced trap in primFillRect ");
@@ -366,7 +384,7 @@ OBJ primSetCursor(int nargs, OBJ args[]) { return nilObj; }
 PrimEntry graphicsPrimList[] = {
     {"-----", NULL, "Graphics: Skia"},
     {"drawSkiaImage", primSkiaDraw, "Draw the test image using Skia"},
-    {"drawRect", primSkiaRect, "Draw rect x,y,w,h,color"},
+    {"drawRect", primDrawRect, "Draw rect x,y,w,h,color"},
 
     {"-----", NULL, "Graphics: Windows"},
     {"openWindow", primOpenWindow, "Open the graphics window. Arguments: [width height tryRetinaFlag title]"},

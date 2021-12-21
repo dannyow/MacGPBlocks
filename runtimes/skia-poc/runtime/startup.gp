@@ -5,7 +5,6 @@ to startup {
 
     openWindow world
 
-    
     box = (newVBox (rect 150 50 100 150))
     addChild (morph world) (morph box)
 
@@ -24,7 +23,6 @@ to startup {
     // partially off-screen in horizontal axis
     box = (newVBox (rect -200 -200 (+ 200 500 200) 275))
     addChild (morph world) (morph box)
-
 
     run world
 }
