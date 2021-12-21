@@ -151,7 +151,7 @@ method mouseEntered VBox {
     highlighted = true
     alpha = (alpha backgroundColor)
     // backgroundColor = (withAlpha backgroundColor (alpha + 50))
-    addAnimation (newAnimation alpha 255 2000 (action 'setAlpha' this) )
+    addAnimation alpha 255 2000 (action 'setAlpha' this)
 
     insetBounds = (insetBy (bounds morph) -15)
     // (setBounds morph insetBounds)
@@ -165,16 +165,11 @@ method mouseExited VBox {
     
     outsetBounds = (insetBy (bounds morph) 15)
     // (setBounds morph outsetBounds)
-//    addSchedule page (schedule (action 'moveBy' r (rand -5 5) (rand -5 5)) (rand 0 100) -1)
-    //addAnimation (action 'moveBy' r (rand -5 5) (rand -5 5)) (rand 0 100)
 
     durationInMsecs = 2000 // 100ms
     repeatCounter = 1
 
-    //animation = (newAnimation 0 100 durationInMsecs (action 'fadeOut' this) )
-    //animation = (newAnimation 0 100 durationInMsecs (action 'setLeft' morph) )
-    // animation = (newAnimation alpha 0 durationInMsecs (action 'setAlpha' backgroundColor) )
-    addAnimation  (newAnimation alpha 0 durationInMsecs (action 'setAlpha' this) )
+    addAnimation alpha 0 durationInMsecs (action 'setAlpha' this)
 
     // setNeedsDisplay morph
 }
@@ -185,23 +180,16 @@ method setAlpha VBox alpha {
     setAlpha backgroundColor alpha
     setNeedsDisplay morph
 }
-///////
 
 // #endregion
-to addAnimation animation {
+to addAnimation startValue endValue duration setterAction doneAction useFloats {
     world = (global 'world')
     if (isNil world) {
-        error 'no global world was found'
+        error 'no global variable "world" was found'
     }
-    addSchedule world animation
+    addSchedule world (newAnimation startValue endValue duration setterAction doneAction useFloats)
 }
-// to addAnimation action durationInMsecs repeatCounter {
-//     world = (global 'world')
-//     if (isNil world) {
-//         error 'no global world was found'
-//     }
-//     addSchedule world (schedule action  durationInMsecs repeatCounter)
-// }
+
 
 // #region VHandController
 defineClass VHandController morph color world mouseX mouseY morphsUnderMouse
