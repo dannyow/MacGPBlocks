@@ -1,5 +1,9 @@
 
-
+to assert condition message {
+    if (condition == false){
+        error 'ASSERION FAILED:' message
+    }
+}
 to trace args... {
   result = (list)
   for i (argCount) {
@@ -35,11 +39,11 @@ to drawFilledRect color rect addShadow {
 
 
 // #region VMorph
-defineClass VMorph handler bounds needsDisplay children owner
+defineClass VMorph handler bounds needsDisplay children parent
 to newVMorph handler bounds {
     morph = (new 'VMorph' nil bounds true (list))
     setField morph 'handler' handler
-    setField morph 'owner' handler
+    setField morph 'parent' nil
     return morph
 }
 
@@ -56,6 +60,8 @@ method needsDisplay VMorph {
     }
     return false
 }
+method parent VMorph { return parent }
+method setParent VMorph m { parent = m }
 method handler VMorph { return handler }
 method bounds VMorph { return bounds }
 method setBounds VMorph aRect { bounds = aRect; setNeedsDisplay this }
@@ -71,7 +77,23 @@ method draw VMorph {
 }
 method children VMorph { return children }
 method addChild VMorph m {
+    assert (isNil (parent m)) 'newly added morph should not have a parent'
     add children m
+    setParent m this
+    setNeedsDisplay this
+}
+method moveToFront VMorph {
+    assert (notNil parent) 'morph should have a parent'
+    
+    childrenToReorder = (children parent)
+    index = (indexOf childrenToReorder this)
+    if (index == (count childrenToReorder)){
+        return
+    }
+  
+    removeAt childrenToReorder index
+    add childrenToReorder this
+
     setNeedsDisplay this
 }
 
@@ -80,10 +102,10 @@ method collectChildrenAt VMorph x y targetList {
     for m fromLast {
         collectChildrenAt m x y targetList
     }
-    //TODO: remove this hack or change it into handler interface like 'skipHitTest'
-    if ( (className (classOf handler)) == 'VWorld' )  {
-        return targetList
-    }
+    // //TODO: remove this hack or change it into handler interface like 'skipHitTest'
+    // if ( (className (classOf handler)) == 'VWorld' )  {
+    //     return targetList
+    // }
     if (containsPoint bounds x y) {
         (add targetList this)
     }
@@ -150,26 +172,24 @@ method draw VBox bounds {
 method mouseEntered VBox {
     highlighted = true
     alpha = (alpha backgroundColor)
-    // backgroundColor = (withAlpha backgroundColor (alpha + 50))
     addAnimation alpha 255 2000 (action 'setAlpha' this)
-
-    insetBounds = (insetBy (bounds morph) -15)
+    // backgroundColor = (withAlpha backgroundColor (alpha + 50))
+    // insetBounds = (insetBy (bounds morph) -15)
     // (setBounds morph insetBounds)
 
+    moveToFront morph
     setNeedsDisplay morph
 }
 method mouseExited VBox {
     highlighted = false
      alpha = (alpha backgroundColor)
-    // backgroundColor = (withAlpha backgroundColor (alpha - 50))
-    
-    outsetBounds = (insetBy (bounds morph) 15)
+    // backgroundColor = (withAlpha backgroundColor (alpha - 50))    
+    // outsetBounds = (insetBy (bounds morph) 15)
     // (setBounds morph outsetBounds)
 
     durationInMsecs = 2000 // 100ms
-    repeatCounter = 1
 
-    addAnimation alpha 0 durationInMsecs (action 'setAlpha' this)
+    addAnimation alpha 10 durationInMsecs (action 'setAlpha' this)
 
     // setNeedsDisplay morph
 }
@@ -309,7 +329,7 @@ method OLDprocessEvents VWorld {
 method doOneCycle VWorld {
    startTime = (newTimer)
 
-    //gcIfNeeded  
+    gcIfNeeded  
     processEvents this
     // step hand
     // step morph
