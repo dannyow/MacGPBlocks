@@ -134,34 +134,6 @@ static void repaintIfNeeded() {
     needsRepaint = false;
 }
 
-OBJ primDrawRect(int nargs, OBJ args[]) {
-
-    sk_rect_t rect;
-    float x = intOrFloatArg(0, 0, nargs, args);
-    float y = intOrFloatArg(1, 0, nargs, args);
-    rect.left = x;
-    rect.top = y;
-    rect.right = x + intOrFloatArg(2, 100, nargs, args);
-    rect.bottom = y + intOrFloatArg(3, 100, nargs, args);
-
-    int color = intArg(4, 0xFFFF00FF, nargs, args);
-    sk_paint_t* paint = sk_paint_new();
-    sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
-    sk_paint_set_stroke_width(paint, 2);
-    sk_paint_set_color(paint, color);
-
-    sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_OUTER, 2 * 3.4, false);
-    sk_paint_set_maskfilter(paint, filter);
-
-    sk_canvas_draw_rect(canvas, &rect, paint);
-
-    sk_maskfilter_unref(filter);
-    sk_paint_delete(paint);
-//    needsRepaint = true;
-
-    return nilObj;
-
-}
 OBJ primSkiaDraw(int nargs, OBJ args[]) {
     if (!canvas) {
         WARN("No canvas?");
@@ -264,7 +236,11 @@ OBJ primNextEvent(int nargs, OBJ args[]) {
 }
 
 static sk_color_t kErrorColorMarker = 0xFFFF0000;
-static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha){
+static sk_color_t kDefaultBackgroundColorMarker = 0xFFFF0000;
+static sk_color_t kDefaultBorderColorMarker = 0xFF00FF00;
+static sk_color_t kDefaultShadowColorMarker = 0x80000000;
+
+static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha, sk_color_t defaultColor){
     // Set the color for the next drawing operation.
     // Set the renderer's draw color (for texture drawing)
     // and the globals rgb and alpha (for bitmap drawing).
@@ -272,8 +248,7 @@ static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha){
     int alpha = 255;
     int words = objWords(colorObj);
     if (words < 3) {
-        WARN("could to create a color value");
-        return kErrorColorMarker;
+        return defaultColor;
     }
     int r = isInt(FIELD(colorObj, 0)) ? obj2int(FIELD(colorObj, 0)) : 0;
     int g = isInt(FIELD(colorObj, 1)) ? obj2int(FIELD(colorObj, 1)) : 0;
@@ -292,47 +267,122 @@ static sk_rect_t makeRect(int x, int y, int w, int h){
     return (sk_rect_t){.left=x, .top=y, .right=x+w, .bottom= y+h};
 }
 
+//drawRect left top width height bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
+OBJ primDrawRect(int nargs, OBJ args[]) {
+    if (nargs < 4) return notEnoughArgsFailure();
+    sk_rect_t rect = makeRect(intOrFloatArg(0, 0, nargs, args), intOrFloatArg(1, 0, nargs, args),
+                              intOrFloatArg(2, 100, nargs, args), intOrFloatArg(3, 100, nargs, args));
+
+    OBJ bgColorArg = args[4];
+    sk_color_t bgColor = makeColorFromObj(bgColorArg, false, kDefaultBackgroundColorMarker);
+    float cornerRadius = intOrFloatArg(5, 0, nargs, args);
+    float borderWidth = intOrFloatArg(6, 0, nargs, args);
+    sk_color_t borderColor = makeColorFromObj(args[7], false, kDefaultBorderColorMarker);
+    float shadowBlur = intOrFloatArg(8, 0, nargs, args);
+    sk_color_t shadowColor = makeColorFromObj(args[9], false, kDefaultShadowColorMarker);
+    sk_color_t shadowOffsetX = intOrFloatArg(10, 5, nargs, args);
+    sk_color_t shadowOffsetY = intOrFloatArg(11, 5, nargs, args);
+
+    bool hasBackground = bgColorArg != nilObj;
+    bool hasShadow = shadowBlur > 0.0;
+    bool hasBorder = borderWidth > 0.0;
+    bool hasRoundedCorners = cornerRadius > 0.0;
+
+    sk_paint_t* paint = sk_paint_new();
+    sk_paint_set_antialias(paint, true);
+
+    if(hasShadow){
+        sk_paint_set_color(paint, shadowColor);
+        sk_paint_set_style(paint,  SK_PAINT_STYLE_FILL);
+
+        // Border can't throw shadow this way for now, since it ends with shader compilation error 'ERROR: 0:40: Invalid call of undeclared identifier 'isinf''
+        // Instead borderWidth is added to shadowRect below
+        //  if(hasBorder){
+        //      sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE_AND_FILL);
+        //      sk_paint_set_stroke_width(paint, borderWidth);
+        //  }
+
+        sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_NORMAL, shadowBlur, false);
+        sk_paint_set_maskfilter(paint, filter);
+
+        sk_rect_t shadowRect;
+        shadowRect.left = rect.left + shadowOffsetX - borderWidth;
+        shadowRect.top = rect.top + shadowOffsetY - borderWidth;
+        shadowRect.right = rect.right + shadowOffsetX + borderWidth;
+        shadowRect.bottom = rect.bottom + shadowOffsetY + borderWidth;
+
+        if(hasRoundedCorners){
+            sk_canvas_draw_round_rect(canvas, &shadowRect, cornerRadius, cornerRadius, paint);
+        }else{
+            sk_canvas_draw_rect(canvas, &shadowRect, paint);
+        }
+        sk_maskfilter_unref(filter);
+        sk_paint_set_maskfilter(paint, NULL);
+    }
+
+    if (hasBackground){
+        sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
+        sk_paint_set_color(paint, bgColor);
+        if(hasRoundedCorners){
+            sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
+        }else{
+            sk_canvas_draw_rect(canvas, &rect, paint);
+        }
+    }
+    if (hasBorder){
+        sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
+        sk_paint_set_color(paint, borderColor);
+        sk_paint_set_stroke_width(paint, borderWidth);
+        if(hasRoundedCorners){
+            sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
+        }else{
+            sk_canvas_draw_rect(canvas, &rect, paint);
+        }
+    }
+    if( !hasBackground && !hasBorder){
+        // Draw a 'debug' rectangle
+        sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
+        sk_paint_set_color(paint, kErrorColorMarker);
+        if(hasRoundedCorners){
+            sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
+        }else{
+            sk_canvas_draw_rect(canvas, &rect, paint);
+        }
+    }
+
+    sk_paint_delete(paint);
+
+    return nilObj;
+}
+
 OBJ primFillRect(int nargs, OBJ args[]) {
     if (nargs < 2) return notEnoughArgsFailure();
     if (!initialized) initGraphics();
     //OBJ _unused = args[0];// textureOrBitmap - unused here
 
-    sk_color_t color = makeColorFromObj(args[1], false);
+    sk_color_t color = makeColorFromObj(args[1], false, kErrorColorMarker);
     sk_rect_t rect = makeRect(intOrFloatArg(2, 0, nargs, args), intOrFloatArg(3, 0, nargs, args),
                               intOrFloatArg(4, 100, nargs, args), intOrFloatArg(5, 100, nargs, args));
 
-    //FIXME: for now we are using the first argument as shadowFlag (normally that was a texture obj)
-    bool addShadow = args[0] != nilObj;
-
     sk_paint_t* paint = sk_paint_new();
     sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
+    sk_paint_set_color(paint, color);
+    sk_paint_set_antialias(paint, true);
+
     sk_paint_set_color(paint, color);
 
     //printf("Drawing rect color : %x, rect{%f, %f, %f, %f}\n", color, rect.left, rect.top, (rect.right - rect.left), (rect.bottom-rect.top));
     sk_canvas_draw_rect(canvas, &rect, paint);
 
-    if(addShadow){
-        sk_paint_set_color(paint, 0x80000000); // 0x1E circa matches 0.12
-
-        sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_OUTER, 4 * 2 * 3.4, false);
-        sk_paint_set_maskfilter(paint, filter);
-
-        sk_canvas_draw_rect(canvas, &rect, paint);
-
-        sk_maskfilter_unref(filter);
-    }
     sk_paint_delete(paint);
 
-//    needsRepaint = true;
-
-    //return primFailed("Forced trap in primFillRect ");
     return nilObj;
 }
 
 OBJ prinDrawPath(int nargs, OBJ args[]) {
     if (nargs < 3) return notEnoughArgsFailure();
 
-    sk_color_t color = makeColorFromObj(args[0], false);
+    sk_color_t color = makeColorFromObj(args[0], false, kErrorColorMarker);
     float strokeWidth = intOrFloatArg(1, 1.0, nargs, args);
     OBJ points = args[2];
     if (NOT_CLASS(points, ArrayClass)) {
@@ -384,7 +434,7 @@ OBJ primSetCursor(int nargs, OBJ args[]) { return nilObj; }
 PrimEntry graphicsPrimList[] = {
     {"-----", NULL, "Graphics: Skia"},
     {"drawSkiaImage", primSkiaDraw, "Draw the test image using Skia"},
-    {"drawRect", primDrawRect, "Draw rect x,y,w,h,color"},
+    {"drawRectLTWH", primDrawRect, "Draw a rectangle. Arguments:[left top width height bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY]"},
 
     {"-----", NULL, "Graphics: Windows"},
     {"openWindow", primOpenWindow, "Open the graphics window. Arguments: [width height tryRetinaFlag title]"},

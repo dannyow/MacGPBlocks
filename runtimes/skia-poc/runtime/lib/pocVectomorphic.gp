@@ -13,28 +13,54 @@ to trace args... {
   log 'TRACE:' (joinStringArray (toArray result))
 }
 
-to drawFilledRect color rect addShadow {
-    // trace 'primfillRect' (toString color) (toString rect)
-    // TODO: idea for new drawRect primitive
-    // Draws a filled rectangle
-    // drawRect left top width height bgColor
-    
-    // Draws a filled rectangle with border
-    // drawRect left top width height bgColor borderWidth
+to drawRect rect bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY {
+    drawRectLTWH (left rect) (top rect) (width rect) (height rect)  bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
+}
 
-    // // Draws a filled rectangle with border and other color of t
-    // drawRect left top width height bgColor borderWidth borderColor
-    // drawRect left top width height bgColor borderWidth borderColor shadowBlur
-    // drawRect left top width height bgColor borderWidth borderColor shadowBlur shadowColor
+to test_drawRect {
+    r = (rect 20 20 40 40)
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
 
+    (translateBy r 50 0)
+    bgColor = (color 100 100 100 100)
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
 
-    //fillRect nil color (left rect) (top rect) (width rect) (height rect)
-    shadowFlag = nil
-    if (addShadow == true){
-        shadowFlag = true // any value will work
-    }
+    (translateBy r 50 0)
+    bgColor = (color 100 200 100 100)
+    cornerRadius = 8
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
 
-    fillRect shadowFlag color (left rect) (top rect) (width rect) (height rect)
+    (translateBy r 50 0)
+    bgColor = (color 50 200 200 )
+    cornerRadius = 10
+    borderWidth = 5
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
+
+    (translateBy r 50 0)
+    bgColor = (color 100 250 250 100)
+    cornerRadius = nil
+    borderWidth = 5
+    borderColor = (color 200 0 200 100)
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
+
+    (translateBy r 50 0)
+    bgColor = (color 250 50 250)
+    cornerRadius = 10
+    borderWidth = 5
+    borderColor = (color 0 100 100 )
+    shadowBlur = 10
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
+
+    (translateBy r 50 0)
+    bgColor = (color 60 150 250)
+    cornerRadius = 10
+    borderWidth = 5
+    borderColor = (color 0 100 100 )
+    shadowBlur = 1
+    shadowColor = (color 0 0 250)
+    shadowOffsetX = 10
+    shadowOffsetY = 0
+    drawRectLTWH (left r) (top r) (width r) (height r) bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
 }
 
 
@@ -143,31 +169,15 @@ to newVBox bounds {
 }
 method acceptsEvents VBox { return true }
 
-
-    // // Use model approach
-    // method draw VBox bounds {
-    //     color = backgroundColor
-    //     rect = bounds
-    //     if (highlighted == true){
-    //         alpha = (alpha backgroundColor)
-    //         color = (withAlpha color (alpha + 50))
-    //         rect = (insetBy bounds 15)
-    //     }
-    //     drawFilledRect color rect
-    // }
-    // method mouseEntered VBox {
-    //     highlighted = true
-    //     setNeedsDisplay morph
-    // }
-    // method mouseExited VBox {
-    //     highlighted = false
-    //     setNeedsDisplay morph
-    // }
-
 // Use more direct approach
 method draw VBox bounds {
-    // drawFilledRect (randomColor) (bounds morph)
-    drawFilledRect backgroundColor (bounds morph) highlighted 
+    if ( highlighted == true){
+        alpha = (alpha backgroundColor)
+        shadowColor = (gray 100 alpha)
+        drawRect (bounds morph) backgroundColor  5.0 2.0 nil 20 shadowColor 0 5
+    }else {
+        drawRect (bounds morph) backgroundColor  5.0
+    } 
 }
 method mouseEntered VBox {
     highlighted = true
@@ -230,8 +240,9 @@ method setPosition VHandController x y {
 }
 method morph VHandController { return morph }
 method draw VHandController bounds {
-    drawFilledRect color (bounds morph)
+    drawRect (bounds morph) color   
 }
+
 method processEvent VHandController event {
     // x = (at event 'x')
     // y = (at event 'y')
@@ -346,6 +357,7 @@ method doOneCycle VWorld {
     if (shouldRepaint == true){
         draw rootMorph
     }
+    // test_drawRect
 
      // Debug draw of mouse
      draw (morph hand)
