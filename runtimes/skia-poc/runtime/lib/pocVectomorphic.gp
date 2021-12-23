@@ -129,9 +129,9 @@ method collectChildrenAt VMorph x y targetList {
         collectChildrenAt m x y targetList
     }
     // //TODO: remove this hack or change it into handler interface like 'skipHitTest'
-    // if ( (className (classOf handler)) == 'VWorld' )  {
-    //     return targetList
-    // }
+    if ( (className (classOf handler)) == 'VWorld' )  {
+        return targetList
+    }
     if (containsPoint bounds x y) {
         (add targetList this)
     }
@@ -153,10 +153,23 @@ method mouseExited VMorph {
         (mouseExited handler)
     }
 }
+
+method mouseDown VMorph {
+     if (and (notNil handler) (acceptsEvents handler) ){
+        mouseDown handler
+        setNeedsDisplay this
+    }
+}
+method mouseUp VMorph {
+    if (and (notNil handler) (acceptsEvents handler) ){
+        mouseUp handler
+        setNeedsDisplay this
+    }
+}
 // #endregion
 
 // #region VBox
-defineClass VBox morph backgroundColor borderColor borderWidth highlighted fadeColor
+defineClass VBox morph backgroundColor borderColor borderWidth highlighted selected
 to newVBox bounds {
     box = (new 'VBox' nil (withAlpha (randomColor) 200) (randomColor) 2.0)
 
@@ -165,19 +178,30 @@ to newVBox bounds {
 
     (setBounds morph bounds)
 
+    setField box 'highlighted' false
+    setField box 'selected' false
+
     return box
 }
 method acceptsEvents VBox { return true }
 
 // Use more direct approach
 method draw VBox bounds {
-    if ( highlighted == true){
+    borderWidth = nil
+    alpha = (alpha backgroundColor)
+
+    if ( selected == true ) {
+        borderColor = (color 0 255 0 255)
+        borderWidth = 2.0
+    } ( highlighted == true){
         alpha = (alpha backgroundColor)
         shadowColor = (gray 100 alpha)
-        drawRect (bounds morph) backgroundColor  5.0 2.0 nil 20 shadowColor 0 5
-    }else {
-        drawRect (bounds morph) backgroundColor  5.0
+        shadowBlur = 20
+        shadowX = 0
+        shadowY = 0
     } 
+    // drawRect rect bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY {
+    drawRect (bounds morph) backgroundColor 5.0 borderWidth borderColor shadowBlur shadowColor shadowX shadowY
 }
 method mouseEntered VBox {
     highlighted = true
@@ -186,10 +210,8 @@ method mouseEntered VBox {
     // backgroundColor = (withAlpha backgroundColor (alpha + 50))
     // insetBounds = (insetBy (bounds morph) -15)
     // (setBounds morph insetBounds)
-
-    moveToFront morph
-    setNeedsDisplay morph
 }
+    
 method mouseExited VBox {
     highlighted = false
      alpha = (alpha backgroundColor)
@@ -199,9 +221,17 @@ method mouseExited VBox {
 
     durationInMsecs = 2000 // 100ms
 
-    addAnimation alpha 10 durationInMsecs (action 'setAlpha' this)
+    addAnimation alpha 80 durationInMsecs (action 'setAlpha' this)
 
     // setNeedsDisplay morph
+}
+
+method mouseDown VBox {
+
+    selected = (not selected)
+    moveToFront morph
+}
+method mouseUp VBox {
 }
 method printArg VBox arg {
     trace 'Arg: ' arg
@@ -250,15 +280,31 @@ method processEvent VHandController event {
     type = (at event 'type')
     if (type == 'mouseMove') {
         processMouseMove this
+    } (type == 'mouseDown'){
+        processMouseDown this
+    } (type == 'mouseUp'){
+        processMouseUp this
     }
 }
-
+method processMouseDown VHandController {
+    if (notEmpty morphsUnderMouse){
+        mouseDown (first morphsUnderMouse)
+    }
+}
+method processMouseUp VHandController {
+    if (notEmpty morphsUnderMouse){
+        mouseUp (first morphsUnderMouse)
+    }
+}
 method processMouseMove VHandController {
     rootMorph = (morph world)
 
     newMorphsUnderMouse = (collectChildrenAt rootMorph mouseX mouseY (list))
     oldMorphsUnderMouse = (copy morphsUnderMouse)
 
+    if (notEmpty newMorphsUnderMouse){
+        newMorphsUnderMouse = (list (first newMorphsUnderMouse))
+    }
    //log 'old:' (toString oldMorphsUnderMouse) 'new:' (toString newMorphsUnderMouse)
 
     for m newMorphsUnderMouse {
