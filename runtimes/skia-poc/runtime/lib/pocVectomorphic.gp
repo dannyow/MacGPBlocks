@@ -169,8 +169,8 @@ method mouseUp VMorph {
 // #endregion
 
 // #region VBox
-defineClass VBox morph backgroundColor borderColor borderWidth highlighted selected
-to newVBox bounds {
+defineClass VBox morph backgroundColor borderColor borderWidth highlighted selected onClickAction
+to newVBox bounds clickAction {
     box = (new 'VBox' nil (withAlpha (randomColor) 200) (randomColor) 2.0)
 
     morph = (newVMorph box)
@@ -180,9 +180,11 @@ to newVBox bounds {
 
     setField box 'highlighted' false
     setField box 'selected' false
+    setField box 'onClickAction' clickAction
 
     return box
 }
+method backgroundColor VBox { return backgroundColor }
 method acceptsEvents VBox { return true }
 
 // Use more direct approach
@@ -232,6 +234,9 @@ method mouseDown VBox {
     moveToFront morph
 }
 method mouseUp VBox {
+    if ( notNil onClickAction) {
+        call onClickAction this
+    }
 }
 method printArg VBox arg {
     trace 'Arg: ' arg
@@ -252,7 +257,7 @@ to addAnimation startValue endValue duration setterAction doneAction useFloats {
 
 
 // #region VHandController
-defineClass VHandController morph color world mouseX mouseY morphsUnderMouse
+defineClass VHandController morph color world mouseX mouseY morphsUnderMouse dragCandidate dragCandidateXOffset dragCandidateYOffset
 to newVHandController {
     hand = (new 'VHandController' nil (randomColor) nil 0 0 (list))
 
@@ -274,8 +279,6 @@ method draw VHandController bounds {
 }
 
 method processEvent VHandController event {
-    // x = (at event 'x')
-    // y = (at event 'y')
     setPosition this (at event 'x') (at event 'y')
     type = (at event 'type')
     if (type == 'mouseMove') {
@@ -287,26 +290,42 @@ method processEvent VHandController event {
     }
 }
 method processMouseDown VHandController {
+    dragCandidate = nil
     if (notEmpty morphsUnderMouse){
-        mouseDown (first morphsUnderMouse)
+        m = (first morphsUnderMouse)
+        mouseDown m
+        dragCandidate = m
+        dragCandidateXOffset = (mouseX - (left (bounds m)))
+        dragCandidateYOffset = (mouseY - (top (bounds m)))
     }
 }
+
 method processMouseUp VHandController {
+    dragCandidate = nil
     if (notEmpty morphsUnderMouse){
         mouseUp (first morphsUnderMouse)
     }
 }
 method processMouseMove VHandController {
+    if (notNil dragCandidate){
+        (setLeft dragCandidate (mouseX - dragCandidateXOffset))
+        (setTop dragCandidate (mouseY - dragCandidateYOffset))
+    }
+   trackMouseMove this true
+
+}
+
+method trackMouseMove VHandController useOnlyTopMostMorph {
     rootMorph = (morph world)
 
     newMorphsUnderMouse = (collectChildrenAt rootMorph mouseX mouseY (list))
     oldMorphsUnderMouse = (copy morphsUnderMouse)
 
-    if (notEmpty newMorphsUnderMouse){
+    if (and useOnlyTopMostMorph (notEmpty newMorphsUnderMouse)){
         newMorphsUnderMouse = (list (first newMorphsUnderMouse))
     }
-   //log 'old:' (toString oldMorphsUnderMouse) 'new:' (toString newMorphsUnderMouse)
 
+   //trace 'old:' (toString oldMorphsUnderMouse) 'new:' (toString newMorphsUnderMouse)
     for m newMorphsUnderMouse {
         if (contains oldMorphsUnderMouse m) {
             remove oldMorphsUnderMouse m
@@ -320,7 +339,6 @@ method processMouseMove VHandController {
 
     morphsUnderMouse = newMorphsUnderMouse
 }
-
 // #endregion
 
 // #region VWorld
@@ -391,10 +409,8 @@ method doOneCycle VWorld {
     // step hand
     // step morph
 
-    // // step animations?
+    // animations
     stepSchedules this
-
-    // repaint this
 
     rootMorph = (morph this)
 
