@@ -37,10 +37,6 @@ int windowHeight;
 #define WARN(s) printf("WARN: " s "(%s:%d)\n", __FILE__, __LINE__)
 
 
-int frames = 0;
-double t, t0, fps;
-char title_string[20];
-
 static gr_direct_context_t* makeSkiaContext() {
     const gr_glinterface_t* interface = gr_glinterface_create_native_interface();
     gr_direct_context_t* context = gr_direct_context_make_gl(interface);
@@ -85,6 +81,11 @@ static void initGraphics() {
 }
 
 static void repaintIfNeeded() {
+
+    static int frames = 0;
+    static double t, t0, fps;
+    char titleString[20];
+
     if(!needsRepaint){
         return;
     }
@@ -123,8 +124,8 @@ static void repaintIfNeeded() {
         if((t - t0) > 0.1 || frames == 0)
         {
             fps = (double)frames / (t - t0);
-            sprintf(title_string, "FPS: %.1f", fps);
-            glfwSetWindowTitle(window, title_string);
+            sprintf(titleString, "FPS: %.1f", fps);
+            glfwSetWindowTitle(window, titleString);
             t0 = t;
             frames = 0;
         }
