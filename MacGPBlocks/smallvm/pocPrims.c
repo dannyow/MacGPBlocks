@@ -46,7 +46,6 @@ static gr_direct_context_t* makeSkiaContext() {
     gr_direct_context_t* context = gr_direct_context_make_gl(interface);
     return context;
 }
-
 static sk_surface_t* newSurface(gr_direct_context_t* context, const int w, const int h) {
     static gr_gl_framebufferinfo_t fbInfo = {
         .fFBOID = 0,
@@ -61,7 +60,6 @@ static sk_surface_t* newSurface(gr_direct_context_t* context, const int w, const
     gr_backendrendertarget_delete(target);
     return surface;
 }
-
 static void exitHandler(void) {
     WARN("Called at exit");
     if (context) {
@@ -100,7 +98,9 @@ static void repaintIfNeeded() {
     if (context) {
         if (surface) {
             sk_surface_unref(surface);
+            surface = NULL;
         }
+
         int actualW, logicalW, actualH, logicalH;
         float contentScaleX, contentScaleY;
         glfwGetWindowSize(window, &logicalW, &logicalH);
@@ -109,7 +109,7 @@ static void repaintIfNeeded() {
         actualH = logicalH * contentScaleY;
 
         // Surface is cheap(ish?) to create src: https://groups.google.com/g/skia-discuss/c/3c10MvyaSug
-        sk_surface_t* surface = newSurface(context, actualW, actualH);
+        surface = newSurface(context, actualW, actualH);
         canvas = sk_surface_get_canvas(surface);
         if (contentScaleX != 1.0 || contentScaleY != 1.0) {
             sk_canvas_scale(canvas, contentScaleX, contentScaleY);
