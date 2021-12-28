@@ -1,3 +1,4 @@
+
 //
 //  glfwPrims.c
 //
@@ -26,7 +27,7 @@ sk_canvas_t* canvas = NULL;
 static gr_direct_context_t* context = NULL;
 static sk_surface_t* surface = NULL;
 
-static bool needsRepaint = true;
+bool firstRepaint = true;  // an extra repoaint on the first event in order to avoid red background at app's start
 
 // Used by events.c
 int mouseScale;
@@ -35,7 +36,6 @@ int windowHeight;
 
 #define TODO(s) printf("TODO: " s "(%s:%d)\n", __FILE__, __LINE__)
 #define WARN(s) printf("WARN: " s "(%s:%d)\n", __FILE__, __LINE__)
-
 
 static gr_direct_context_t* makeSkiaContext() {
     const gr_glinterface_t* interface = gr_glinterface_create_native_interface();
@@ -56,6 +56,15 @@ static sk_surface_t* newSurface(gr_direct_context_t* context, const int w, const
     gr_backendrendertarget_delete(target);
     return surface;
 }
+
+static void releaseSurface() {
+    if (!surface) {
+        return;
+    }
+    sk_surface_unref(surface);
+    surface = NULL;
+}
+
 static void exitHandler(void) {
     WARN("Called at exit");
     if (context) {
@@ -66,6 +75,7 @@ static void exitHandler(void) {
     }
     glfwTerminate();
 }
+
 static void initGraphics() {
     if (initialized) return;  // already initialized
 
@@ -80,28 +90,21 @@ static void initGraphics() {
     initialized = true;
 }
 
-static void repaintIfNeeded() {
-
+static void repaint() {
     static int frames = 0;
     static double t, t0, fps;
     char titleString[20];
 
-    if(!needsRepaint){
-        return;
+    if (surface) {
+        sk_surface_flush_and_submit(surface, false);
+        releaseSurface();
     }
-    if (canvas) {
-        sk_canvas_flush(canvas);
-    }
+
     if (window) {
         glfwSwapBuffers(window);
     }
 
     if (context) {
-        if (surface) {
-            sk_surface_unref(surface);
-            surface = NULL;
-        }
-
         int actualW, logicalW, actualH, logicalH;
         float contentScaleX, contentScaleY;
         glfwGetWindowSize(window, &logicalW, &logicalH);
@@ -109,30 +112,34 @@ static void repaintIfNeeded() {
         actualW = logicalW * contentScaleX;
         actualH = logicalH * contentScaleY;
 
-        // Surface is cheap(ish?) to create src: https://groups.google.com/g/skia-discuss/c/3c10MvyaSug
-        surface = newSurface(context, actualW, actualH);
-        canvas = sk_surface_get_canvas(surface);
-        if (contentScaleX != 1.0 || contentScaleY != 1.0) {
-            sk_canvas_scale(canvas, contentScaleX, contentScaleY);
+        if (!surface) {
+            // Surface is cheap(ish?) to create src: https://groups.google.com/g/skia-discuss/c/3c10MvyaSug
+            surface = newSurface(context, actualW, actualH);
+            canvas = sk_surface_get_canvas(surface);
+            if (contentScaleX != 1.0 || contentScaleY != 1.0) {
+                sk_canvas_scale(canvas, contentScaleX, contentScaleY);
+            }
         }
+
         sk_color_t bgColor = 0xFFF0F0F0;
         sk_canvas_draw_color(canvas, bgColor, SK_BLEND_MODE_SRCOVER);
 
         ///
         t = glfwGetTime();
-
-        if((t - t0) > 0.1 || frames == 0)
-        {
+        if ((t - t0) > 0.1 || frames == 0) {
             fps = (double)frames / (t - t0);
             sprintf(titleString, "FPS: %.1f", fps);
             glfwSetWindowTitle(window, titleString);
             t0 = t;
             frames = 0;
         }
-        frames ++;
+        frames++;
         ///
     }
-    needsRepaint = false;
+}
+
+static void windowSizeCallback(GLFWwindow* window, int width, int height) {
+    repaint();
 }
 
 OBJ primSkiaDraw(int nargs, OBJ args[]) {
@@ -191,6 +198,7 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
         exit(EXIT_FAILURE);
     }
 
+    glfwSetWindowSizeCallback(window, windowSizeCallback);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -209,8 +217,7 @@ OBJ primOpenWindow(int nargs, OBJ args[]) {
         fprintf(stderr, "Failed to create Skia context\n");
         exit(EXIT_FAILURE);
     }
-    repaintIfNeeded();
-    needsRepaint = true;
+    repaint();
 
     return nilObj;
 }
@@ -232,7 +239,10 @@ OBJ primWindowSize(int nargs, OBJ args[]) {
 }
 
 OBJ primNextEvent(int nargs, OBJ args[]) {
-    repaintIfNeeded();
+    if (firstRepaint) {
+        firstRepaint = false;
+        repaint();
+    }
     return getEvent();
 }
 
@@ -241,7 +251,7 @@ static sk_color_t kDefaultBackgroundColorMarker = 0xFFFF0000;
 static sk_color_t kDefaultBorderColorMarker = 0xFF00FF00;
 static sk_color_t kDefaultShadowColorMarker = 0x80000000;
 
-static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha, sk_color_t defaultColor){
+static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha, sk_color_t defaultColor) {
     // Set the color for the next drawing operation.
     // Set the renderer's draw color (for texture drawing)
     // and the globals rgb and alpha (for bitmap drawing).
@@ -262,10 +272,10 @@ static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha, sk_color_t de
     rgb = (r << 16) | (g << 8) | b;
     alpha = a;
 
-    return (a<<24) | rgb;
+    return (a << 24) | rgb;
 }
-static sk_rect_t makeRect(int x, int y, int w, int h){
-    return (sk_rect_t){.left=x, .top=y, .right=x+w, .bottom= y+h};
+static sk_rect_t makeRect(int x, int y, int w, int h) {
+    return (sk_rect_t){.left = x, .top = y, .right = x + w, .bottom = y + h};
 }
 
 //drawRect left top width height bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
@@ -292,9 +302,9 @@ OBJ primDrawRect(int nargs, OBJ args[]) {
     sk_paint_t* paint = sk_paint_new();
     sk_paint_set_antialias(paint, true);
 
-    if(hasShadow){
+    if (hasShadow) {
         sk_paint_set_color(paint, shadowColor);
-        sk_paint_set_style(paint,  SK_PAINT_STYLE_FILL);
+        sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
 
         // Border can't throw shadow this way for now, since it ends with shader compilation error 'ERROR: 0:40: Invalid call of undeclared identifier 'isinf''
         // Instead borderWidth is added to shadowRect below
@@ -312,41 +322,41 @@ OBJ primDrawRect(int nargs, OBJ args[]) {
         shadowRect.right = rect.right + shadowOffsetX + borderWidth;
         shadowRect.bottom = rect.bottom + shadowOffsetY + borderWidth;
 
-        if(hasRoundedCorners){
+        if (hasRoundedCorners) {
             sk_canvas_draw_round_rect(canvas, &shadowRect, cornerRadius, cornerRadius, paint);
-        }else{
+        } else {
             sk_canvas_draw_rect(canvas, &shadowRect, paint);
         }
         sk_maskfilter_unref(filter);
         sk_paint_set_maskfilter(paint, NULL);
     }
 
-    if (hasBackground){
+    if (hasBackground) {
         sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
         sk_paint_set_color(paint, bgColor);
-        if(hasRoundedCorners){
+        if (hasRoundedCorners) {
             sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
-        }else{
+        } else {
             sk_canvas_draw_rect(canvas, &rect, paint);
         }
     }
-    if (hasBorder){
+    if (hasBorder) {
         sk_paint_set_style(paint, SK_PAINT_STYLE_STROKE);
         sk_paint_set_color(paint, borderColor);
         sk_paint_set_stroke_width(paint, borderWidth);
-        if(hasRoundedCorners){
+        if (hasRoundedCorners) {
             sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
-        }else{
+        } else {
             sk_canvas_draw_rect(canvas, &rect, paint);
         }
     }
-    if( !hasBackground && !hasBorder){
+    if (!hasBackground && !hasBorder) {
         // Draw a 'debug' rectangle
         sk_paint_set_style(paint, SK_PAINT_STYLE_FILL);
         sk_paint_set_color(paint, kErrorColorMarker);
-        if(hasRoundedCorners){
+        if (hasRoundedCorners) {
             sk_canvas_draw_round_rect(canvas, &rect, cornerRadius, cornerRadius, paint);
-        }else{
+        } else {
             sk_canvas_draw_rect(canvas, &rect, paint);
         }
     }
@@ -391,7 +401,7 @@ OBJ prinDrawPath(int nargs, OBJ args[]) {
     }
 
     int count = WORDS(points);
-    if(count % 2 != 0){
+    if (count % 2 != 0) {
         return primFailed("Bad path, not even number of points");
     }
 
@@ -402,10 +412,10 @@ OBJ prinDrawPath(int nargs, OBJ args[]) {
     sk_paint_set_stroke_cap(paint, SK_STROKE_CAP_ROUND);
     sk_paint_set_stroke_join(paint, SK_STROKE_JOIN_ROUND);
 
-    sk_path_t *path = sk_path_new();
+    sk_path_t* path = sk_path_new();
     sk_path_move_to(path, evalFloat(FIELD(points, 0)), evalFloat(FIELD(points, 1)));
 
-    int i = 2; // first two points are already consumed by sk_path_move_to
+    int i = 2;  // first two points are already consumed by sk_path_move_to
     while (i < count) {
         int ix = i++;
         int iy = i++;
@@ -420,8 +430,7 @@ OBJ prinDrawPath(int nargs, OBJ args[]) {
 }
 
 OBJ primFlipWindowBuffer(int nargs, OBJ args[]) {
-    needsRepaint = true;
-    repaintIfNeeded();
+    repaint();
     return nilObj;
 }
 
@@ -464,7 +473,7 @@ PrimEntry graphicsPrimList[] = {
     //    {"showKeyboard",    primShowKeyboard,            "Show or hide the on-screen keyboard on a touchsceen devices. Argument: true or false."},
     {"setCursor", primSetCursor, "Change the mouse pointer appearance. Argument: cursorNumber (0 -> arrow, 3 -> crosshair, 11 -> hand...)"},
 
-//    {"closeAudio",        primNoop,        "Close the audio output driver."},
+    //    {"closeAudio",        primNoop,        "Close the audio output driver."},
 
 };
 
@@ -472,3 +481,4 @@ PrimEntry* pocPrimitives(int* primCount) {
     *primCount = sizeof(graphicsPrimList) / sizeof(PrimEntry);
     return graphicsPrimList;
 }
+
