@@ -379,44 +379,12 @@ method updateScaleAndTranslation VWorld {
     translationY = (at transformation 3)
 }
 method resetTransform VWorld {
-    contentScale = 1.0
+    contentScale = 2.0 // TODO: contentScale should not be visible for GP code
     setCanvasTransformationMatrix contentScale 0 0 
     updateScaleAndTranslation this
     setNeedsDisplay morph
-
-    return
-
-    // transformation = (canvasTransformation)
-    // inspect transformation
-
-    // newScale = (2.0 / (at transformation 1))
-    // tx = (at transformation 2) 
-    // ty = (at transformation 3)
-
-    // transformCanvas newScale 0 0 //(- tx) (- ty) 
-
-    // transformation = (canvasTransformation)
-    // newScale = (2.0 / (at transformation 1))
-    // tx = ((at transformation 2) / 2.0)
-    // ty = ((at transformation 3) / 2.0)
-
-    // transformCanvas 1.0 (- tx) (- ty) 
-
-    // (setNeedsDisplay (morph world))
 }
 method scaleAroundPoint VWorld scaleFactor centerX centerY {
-    // scaleFactor = 0.75 // 0.909091
-    // centerX = 100 //300
-    // centerY = 0 //250
-
-
-    // setCanvasTransformationMatrix scaleFactor centerX centerY
-    // //transformCanvas 1.0 centerX centerY 
-    // updateScaleAndTranslation this
-    // setNeedsDisplay morph
-    // return
-
-    // updateScaleAndTranslation this
     s0 = scale
     tx0 = translationX
     ty0 = translationY
@@ -424,35 +392,9 @@ method scaleAroundPoint VWorld scaleFactor centerX centerY {
     newS = (scaleFactor * s0)
     newTx = (((centerX * s0) * (1 - scaleFactor)) + tx0)
     newTy = (((centerY * s0) * (1 - scaleFactor)) + ty0)
-    trace 'newScale' newS 'newT:' newTx newTy
+    //trace 'newScale' newS 'newT:' newTx newTy
 
     setCanvasTransformationMatrix newS newTx newTy
-    updateScaleAndTranslation this
-    setNeedsDisplay morph
-
-    return
-    //scaleFactor 0.909091 center: 310 312 
-    // Input: scale:(1.000000) trans:(310.000000, 312.000000) 
-    // Before:: scale:(2.000000, 2.000000) trans:(0.000000, 0.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-    // End Matrix:: scale:(2.000000, 2.000000) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-
-    // Input: scale:(0.909091) trans:(0.000000, 0.000000) 
-    // Before:: scale:(2.000000, 2.000000) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-    // End Matrix:: scale:(1.818182, 1.818182) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-
-    // Input: scale:(1.000000) trans:(-310.000000, -312.000000) 
-    // Before:: scale:(1.818182, 1.818182) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-    // End Matrix:: scale:(1.818182, 1.818182) trans:(56.363647, 56.727234) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
-    trace 'scaleFactor' scaleFactor 'center:' centerX centerY
-
-    transformCanvas 1.0  centerX centerY
-    transformCanvas scaleFactor  0 0
-    transformCanvas 1.0  (- centerX) (- centerY)
-
-    // transX = 10 //(xOffset * 2.0)
-    // transY = (yOffset * 2.0)
-    // transformCanvas 1.0 transX transY
-
     updateScaleAndTranslation this
     setNeedsDisplay morph
 }
@@ -484,19 +426,15 @@ method processEvents VWorld {
         y = (at evt 'y')
         button = (at evt 'button')
         if (or (type == 'mouseMove') (type == 'mouseDown') (type == 'mouseUp')) {
+            // TODO: contentScale should not be visible for GP code
             contentScale = 2.0
             contentX = (x * contentScale)
             contentY = (y * contentScale)
 
-            // convertedX = (contentX / scale)
-            // convertedY = (contentY / scale)
-
-            // convertedX = (convertedX - (translationX / scale))
-            // convertedY = (convertedY - (translationY / scale))
-
             convertedX = ((contentX - translationX) / scale)
             convertedY = ((contentY - translationY) / scale)
-            trace 'mouse:' x y ' scale:' scale ' trans:' translationX translationY  ' ->' convertedX convertedY
+
+            //trace 'mouse:' x y ' scale:' scale ' trans:' translationX translationY  ' ->' convertedX convertedY
             processMouseEvent hand type convertedX convertedY button
 
         }( 'mousewheel' == type ){

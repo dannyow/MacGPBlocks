@@ -124,6 +124,7 @@ static void initialize() {
 
 extern GLFWwindow *window; // from pocPrims
 
+// TODO: refactor event types (probably split mouse button and event type)
 typedef enum  {
     EventTypeUnset         = 0x00,
 
@@ -190,7 +191,7 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int action, int 
 }
 
 static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset){
-    printf("🕹🌊scrollCallback: xoffset: %f yoffset: %g\n", xoffset, yoffset);
+    //printf("🕹🌊scrollCallback: xoffset: %f yoffset: %g\n", xoffset, yoffset);
     if(eventsBufferIndex == EVENTS_BUFFER_SIZE){
         printf("WARNING Events buffer size maxed out");
         return;
@@ -233,8 +234,6 @@ OBJ getEvent() {
             dictAtPut(dict, key(_y), int2obj((int)event.mouseY));
             dictAtPut(dict, key(_button), int2obj(button));  // non-zero is right button
             //dictAtPut(dict, key(_keymodifiers), int2obj(evt[4]));
-
-            // printf("🕹Event: %s (mouse: %f, %f)\n", (lastEvent == EventTypeLeftMouseUp ? "mouseUp" : "mouseDown"), lastMouseY, lastMouseY);
             return dict;
         } else if (event.type == EventTypeMouseMoved) {
             dictAtPut(dict, key(_type), key(type_mousemove));

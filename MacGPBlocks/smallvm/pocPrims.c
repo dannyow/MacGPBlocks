@@ -214,16 +214,16 @@ OBJ primTranformCanvas(int nargs, OBJ args[]) {
     double transX = floatArg(1, 0.0, nargs, args);
     double transY = floatArg(2, 0.0, nargs, args);
 
-    printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
+    //printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
     sk_matrix_t initM;
     sk_canvas_get_total_matrix(canvas, &initM);
-    printMatrix("Before:", &initM);
+    //printMatrix("Before:", &initM);
 
     sk_canvas_scale(canvas, scale, scale);
     sk_canvas_translate(canvas, transX, transY);
     sk_canvas_get_total_matrix(canvas, &canvasMatrix);
 
-    printMatrix("End Matrix:", &canvasMatrix);
+    //printMatrix("End Matrix:", &canvasMatrix);
     return nilObj;
 
 }
@@ -234,10 +234,10 @@ OBJ primSetCanvasTranformMatrix(int nargs, OBJ args[]) {
     double transX = floatArg(1, 0.0, nargs, args);
     double transY = floatArg(2, 0.0, nargs, args);
 
-    printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
+    //printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
     sk_matrix_t matrix;
     sk_canvas_get_total_matrix(canvas, &matrix);
-    printMatrix("Before:", &matrix);
+    //printMatrix("Before:", &matrix);
 
     matrix.scaleX = scale;
     matrix.scaleY = scale;
@@ -247,7 +247,7 @@ OBJ primSetCanvasTranformMatrix(int nargs, OBJ args[]) {
     sk_canvas_set_matrix(canvas, &matrix);
     sk_canvas_get_total_matrix(canvas, &canvasMatrix);
 
-    printMatrix("End Matrix:", &canvasMatrix);
+    //printMatrix("End Matrix:", &canvasMatrix);
     return nilObj;
 
 }
