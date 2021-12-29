@@ -128,9 +128,14 @@ typedef enum  {
     EventTypeUnset         = 0x00,
 
     EventTypeLeftMouseDown = 0x01,
-    EventTypeLeftMouseUp   = 0x02,
+    EventTypeLeftMouseUp,
 
-    EventTypeMouseMoved    = 0x10,
+    EventTypeRightMouseDown,
+    EventTypeRightMouseUp,
+
+    EventTypeMouseMoved,
+
+    EventTypeMouseWheelScrolled,
 } EventType;
 
 typedef struct {
@@ -160,8 +165,9 @@ static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
 
     eventsBuffer[eventsBufferIndex]  = event;
 }
+
 static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){
-   // printf("🕹🕹mouseButtonCallback: button: %d action: %d\n", button, action);
+    //printf("🕹🕹mouseButtonCallback: button: %d action: %d modes: %d\n", button, action, mods);
     if(eventsBufferIndex == EVENTS_BUFFER_SIZE){
         printf("WARNING Events buffer size maxed out");
         return;
@@ -171,11 +177,10 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int action, int 
     glfwGetCursorPos(window, &xpos, &ypos);
     Event event = {.type = EventTypeUnset, .mouseX = xpos, .mouseY = ypos};
 
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-        event.type = EventTypeLeftMouseDown;
-    }
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
-        event.type =  EventTypeLeftMouseUp;
+    if (button == GLFW_MOUSE_BUTTON_LEFT ){
+        event.type = (action == GLFW_PRESS) ? EventTypeLeftMouseDown : EventTypeLeftMouseUp;
+    }else if (button == GLFW_MOUSE_BUTTON_RIGHT ){
+        event.type = (action == GLFW_PRESS) ? EventTypeRightMouseDown : EventTypeRightMouseUp;
     }
 
     if(event.type != EventTypeUnset){
@@ -184,12 +189,25 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int action, int 
     }
 }
 
+static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset){
+    printf("🕹🌊scrollCallback: xoffset: %f yoffset: %g\n", xoffset, yoffset);
+    if(eventsBufferIndex == EVENTS_BUFFER_SIZE){
+        printf("WARNING Events buffer size maxed out");
+        return;
+    }
+    Event event = {.type = EventTypeMouseWheelScrolled, .mouseX = xoffset, .mouseY = yoffset};
+
+    eventsBufferIndex++;
+    eventsBuffer[eventsBufferIndex] = event;
+}
+
 OBJ getEvent() {
     if (!initialized) {
         initialize();
 
         glfwSetCursorPosCallback(window, cursorPosCallback);
         glfwSetMouseButtonCallback(window, mouseButtonCallback);
+        glfwSetScrollCallback(window, scrollCallback);
         //https://www.glfw.org/docs/3.3/window_guide.html#window_events
         //glfwSetWindowSizeCallback(window, window_size_callback);
     }
@@ -198,33 +216,39 @@ OBJ getEvent() {
     //glfwWaitEventsTimeout(1/60.0);
     OBJ dict = newDict(15);
 
-    if(glfwWindowShouldClose(window)){
+    if (glfwWindowShouldClose(window)) {
         dictAtPut(dict, key(_type), key(type_quit));
         return dict;
     }
 
-    if(eventsBufferIndex > -1){
+    if (eventsBufferIndex > -1) {
         Event event = eventsBuffer[eventsBufferIndex];
         eventsBufferIndex--;
 
-        if(event.type==EventTypeLeftMouseUp || event.type == EventTypeLeftMouseDown){
-            dictAtPut(dict, key(_type), key((event.type == EventTypeLeftMouseDown) ? type_mousedown : type_mouseup));
+        if (event.type == EventTypeLeftMouseUp || event.type == EventTypeLeftMouseDown || event.type == EventTypeRightMouseUp || event.type == EventTypeRightMouseDown) {
+            int down = (event.type == EventTypeLeftMouseDown || event.type == EventTypeRightMouseDown);
+            int button = (event.type == EventTypeLeftMouseDown || event.type == EventTypeLeftMouseUp) ? 0 : 1;
+            dictAtPut(dict, key(_type), key(down ? type_mousedown : type_mouseup));
             dictAtPut(dict, key(_x), int2obj((int)event.mouseX));
             dictAtPut(dict, key(_y), int2obj((int)event.mouseY));
-            dictAtPut(dict, key(_button), int2obj(0)); // non-zero is right button
+            dictAtPut(dict, key(_button), int2obj(button));  // non-zero is right button
             //dictAtPut(dict, key(_keymodifiers), int2obj(evt[4]));
 
             // printf("🕹Event: %s (mouse: %f, %f)\n", (lastEvent == EventTypeLeftMouseUp ? "mouseUp" : "mouseDown"), lastMouseY, lastMouseY);
             return dict;
-        }
-        if(event.type == EventTypeMouseMoved){
+        } else if (event.type == EventTypeMouseMoved) {
             dictAtPut(dict, key(_type), key(type_mousemove));
             dictAtPut(dict, key(_x), int2obj((int)event.mouseX));
             dictAtPut(dict, key(_y), int2obj((int)event.mouseY));
 
             return dict;
-        }
+        } else if (event.type == EventTypeMouseWheelScrolled) {
+            dictAtPut(dict, key(_type), key(type_mousewheel));
+            dictAtPut(dict, key(_x), int2obj((int)(event.mouseX*100)));
+            dictAtPut(dict, key(_y), int2obj((int)(event.mouseY*100)));
 
+            return dict;
+        }
     }
 
     return nilObj;

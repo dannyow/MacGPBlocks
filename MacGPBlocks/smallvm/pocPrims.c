@@ -26,6 +26,7 @@ GLFWwindow* window = NULL;
 sk_canvas_t* canvas = NULL;
 static gr_direct_context_t* context = NULL;
 static sk_surface_t* surface = NULL;
+static sk_matrix_t canvasMatrix;// = {.scaleX=1.0, .skewX=0, .transX=0, .skewY=0, .scaleY=1.0, .transY=0, .persp2=1};
 
 bool firstRepaint = true;  // an extra repoaint on the first event in order to avoid red background at app's start
 
@@ -57,13 +58,6 @@ static sk_surface_t* newSurface(gr_direct_context_t* context, const int w, const
     return surface;
 }
 
-static void releaseSurface() {
-    if (!surface) {
-        return;
-    }
-    sk_surface_unref(surface);
-    surface = NULL;
-}
 
 static void exitHandler(void) {
     WARN("Called at exit");
@@ -97,7 +91,8 @@ static void repaint() {
 
     if (surface) {
         sk_surface_flush_and_submit(surface, false);
-        releaseSurface();
+        sk_surface_unref(surface);
+        surface = NULL;
     }
 
     if (window) {
@@ -116,8 +111,14 @@ static void repaint() {
             // Surface is cheap(ish?) to create src: https://groups.google.com/g/skia-discuss/c/3c10MvyaSug
             surface = newSurface(context, actualW, actualH);
             canvas = sk_surface_get_canvas(surface);
+
             if (contentScaleX != 1.0 || contentScaleY != 1.0) {
                 sk_canvas_scale(canvas, contentScaleX, contentScaleY);
+            }
+//            sk_canvas_scale(canvas, 1, 1);
+
+            if(canvasMatrix.scaleX!=0.0){
+                sk_canvas_set_matrix(canvas, &canvasMatrix);
             }
         }
 
@@ -142,6 +143,11 @@ static void windowSizeCallback(GLFWwindow* window, int width, int height) {
     repaint();
 }
 
+static void printMatrix(const char* msg, sk_matrix_t *m){
+    printf("%s: scale:(%f, %f) trans:(%f, %f) skew:(%f, %f) pers:(%f, %f, %f)\n",
+           msg,
+           m->scaleX, m->scaleY, m->transX, m->transY, m->skewX, m->skewY, m->persp0, m->persp1, m->persp2);
+}
 OBJ primSkiaDraw(int nargs, OBJ args[]) {
     if (!canvas) {
         WARN("No canvas?");
@@ -167,83 +173,6 @@ OBJ primSkiaDraw(int nargs, OBJ args[]) {
     sk_paint_delete(paint);
 
     return nilObj;
-}
-
-OBJ primOpenWindow(int nargs, OBJ args[]) {
-    int w = intOrFloatArg(0, 500, nargs, args);
-    int h = intOrFloatArg(1, 500, nargs, args);
-
-    int useHighDPIFlag = ((nargs > 2) && (args[2] == trueObj)) ? 1 : 0;
-    char* title = strArg(3, "GP", nargs, args);
-
-    int screenBufferFlag = (nargs > 4) && (trueObj == args[4]);  // use bitmap screen buffer
-    printf("WARN: >screenBufferFlag< won't be used (%s:%d)\n", __FILE__, __LINE__);
-
-    w = clip(w, 10, 5000);
-    h = clip(h, 10, 5000);
-
-    initGraphics();
-
-    if (window) {
-        // if window is already open, just resize it
-        //        SDL_SetWindowSize(window, w, h);
-        //        createOrUpdateOffscreenBitmap(false);
-        TODO("resize window if already opened.");
-        return nilObj;
-    }
-
-    window = glfwCreateWindow(w, h, title, NULL, NULL);
-    if (!window) {
-        fprintf(stderr, "Failed to open GLFW window\n");
-        exit(EXIT_FAILURE);
-    }
-
-    glfwSetWindowSizeCallback(window, windowSizeCallback);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-
-    int actualW, logicalW, actualH, logicalH;
-    float contentScaleX, contentScaleY;
-    glfwGetWindowSize(window, &logicalW, &logicalH);
-    glfwGetWindowContentScale(window, &contentScaleX, &contentScaleY);
-    actualW = logicalW * contentScaleX;
-    actualH = logicalH * contentScaleY;
-
-    windowWidth = actualW;
-    windowHeight = actualH;
-
-    context = makeSkiaContext();
-    if (!context) {
-        fprintf(stderr, "Failed to create Skia context\n");
-        exit(EXIT_FAILURE);
-    }
-    repaint();
-
-    return nilObj;
-}
-OBJ primWindowSize(int nargs, OBJ args[]) {
-    int actualW, logicalW, actualH, logicalH;
-    float contentScaleX, contentScaleY;
-    glfwGetWindowSize(window, &logicalW, &logicalH);
-    glfwGetWindowContentScale(window, &contentScaleX, &contentScaleY);
-    actualW = logicalW * contentScaleX;
-    actualH = logicalH * contentScaleY;
-
-    OBJ result = newArray(4);
-    FIELD(result, 0) = int2obj(logicalW);
-    FIELD(result, 1) = int2obj(logicalH);
-    FIELD(result, 2) = int2obj(actualW);
-    FIELD(result, 3) = int2obj(actualH);
-
-    return result;
-}
-
-OBJ primNextEvent(int nargs, OBJ args[]) {
-    if (firstRepaint) {
-        firstRepaint = false;
-        repaint();
-    }
-    return getEvent();
 }
 
 static sk_color_t kErrorColorMarker = 0xFFFF0000;
@@ -277,6 +206,66 @@ static sk_color_t makeColorFromObj(OBJ colorObj, bool ignoreAlpha, sk_color_t de
 static sk_rect_t makeRect(int x, int y, int w, int h) {
     return (sk_rect_t){.left = x, .top = y, .right = x + w, .bottom = y + h};
 }
+
+// transformCanvas scale translateX translateY
+OBJ primTranformCanvas(int nargs, OBJ args[]) {
+    if (nargs < 3) return notEnoughArgsFailure();
+    double scale = floatArg(0, 1.0, nargs, args);
+    double transX = floatArg(1, 0.0, nargs, args);
+    double transY = floatArg(2, 0.0, nargs, args);
+
+    printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
+    sk_matrix_t initM;
+    sk_canvas_get_total_matrix(canvas, &initM);
+    printMatrix("Before:", &initM);
+
+    sk_canvas_scale(canvas, scale, scale);
+    sk_canvas_translate(canvas, transX, transY);
+    sk_canvas_get_total_matrix(canvas, &canvasMatrix);
+
+    printMatrix("End Matrix:", &canvasMatrix);
+    return nilObj;
+
+}
+
+OBJ primSetCanvasTranformMatrix(int nargs, OBJ args[]) {
+    if (nargs < 3) return notEnoughArgsFailure();
+    double scale = floatArg(0, 1.0, nargs, args);
+    double transX = floatArg(1, 0.0, nargs, args);
+    double transY = floatArg(2, 0.0, nargs, args);
+
+    printf("\nInput: scale:(%f) trans:(%f, %f) \n",  scale,  transX,transY);
+    sk_matrix_t matrix;
+    sk_canvas_get_total_matrix(canvas, &matrix);
+    printMatrix("Before:", &matrix);
+
+    matrix.scaleX = scale;
+    matrix.scaleY = scale;
+    matrix.transX = transX;
+    matrix.transY = transY;
+
+    sk_canvas_set_matrix(canvas, &matrix);
+    sk_canvas_get_total_matrix(canvas, &canvasMatrix);
+
+    printMatrix("End Matrix:", &canvasMatrix);
+    return nilObj;
+
+}
+
+
+OBJ primCanvasTransformation(int nargs, OBJ args[]) {
+    sk_canvas_get_total_matrix(canvas, &canvasMatrix);
+
+    double scale = canvasMatrix.scaleX == 0.0 ? 1.0 : canvasMatrix.scaleX;
+    OBJ array = newArray(3);
+
+    FIELD(array, 0) = newFloat(scale);
+    FIELD(array, 1) = newFloat(canvasMatrix.transX);
+    FIELD(array, 2) = newFloat(canvasMatrix.transY);
+
+    return array;
+}
+
 
 //drawRect left top width height bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY
 OBJ primDrawRect(int nargs, OBJ args[]) {
@@ -313,7 +302,7 @@ OBJ primDrawRect(int nargs, OBJ args[]) {
         //      sk_paint_set_stroke_width(paint, borderWidth);
         //  }
 
-        sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_NORMAL, shadowBlur, false);
+        sk_mask_filter_t* filter = sk_maskfilter_new_blur_with_flags(SK_BLUR_STYLE_NORMAL, shadowBlur, true);
         sk_paint_set_maskfilter(paint, filter);
 
         sk_rect_t shadowRect;
@@ -429,11 +418,88 @@ OBJ prinDrawPath(int nargs, OBJ args[]) {
     return nilObj;
 }
 
+// MARK: Regular primitives
+OBJ primOpenWindow(int nargs, OBJ args[]) {
+    int w = intOrFloatArg(0, 500, nargs, args);
+    int h = intOrFloatArg(1, 500, nargs, args);
+
+    int useHighDPIFlag = ((nargs > 2) && (args[2] == trueObj)) ? 1 : 0;
+    char* title = strArg(3, "GP", nargs, args);
+
+    int screenBufferFlag = (nargs > 4) && (trueObj == args[4]);  // use bitmap screen buffer
+    printf("WARN: >screenBufferFlag< won't be used (%s:%d)\n", __FILE__, __LINE__);
+
+    w = clip(w, 10, 5000);
+    h = clip(h, 10, 5000);
+
+    initGraphics();
+
+    if (window) {
+        // if window is already open, just resize it
+        //        SDL_SetWindowSize(window, w, h);
+        //        createOrUpdateOffscreenBitmap(false);
+        TODO("resize window if already opened.");
+        return nilObj;
+    }
+
+    window = glfwCreateWindow(w, h, title, NULL, NULL);
+    if (!window) {
+        fprintf(stderr, "Failed to open GLFW window\n");
+        exit(EXIT_FAILURE);
+    }
+
+    glfwSetWindowSizeCallback(window, windowSizeCallback);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    int actualW, logicalW, actualH, logicalH;
+    float contentScaleX, contentScaleY;
+    glfwGetWindowSize(window, &logicalW, &logicalH);
+    glfwGetWindowContentScale(window, &contentScaleX, &contentScaleY);
+    actualW = logicalW * contentScaleX;
+    actualH = logicalH * contentScaleY;
+
+    windowWidth = actualW;
+    windowHeight = actualH;
+
+    context = makeSkiaContext();
+    if (!context) {
+        fprintf(stderr, "Failed to create Skia context\n");
+        exit(EXIT_FAILURE);
+    }
+    repaint();
+
+    return nilObj;
+}
+OBJ primWindowSize(int nargs, OBJ args[]) {
+    int actualW, logicalW, actualH, logicalH;
+    float contentScaleX, contentScaleY;
+    glfwGetWindowSize(window, &logicalW, &logicalH);
+    glfwGetWindowContentScale(window, &contentScaleX, &contentScaleY);
+    actualW = logicalW * contentScaleX;
+    actualH = logicalH * contentScaleY;
+
+    OBJ result = newArray(4);
+    FIELD(result, 0) = int2obj(logicalW);
+    FIELD(result, 1) = int2obj(logicalH);
+    FIELD(result, 2) = int2obj(actualW);
+    FIELD(result, 3) = int2obj(actualH);
+
+    return result;
+}
+OBJ primNextEvent(int nargs, OBJ args[]) {
+    if (firstRepaint) {
+        firstRepaint = false;
+        repaint();
+    }
+    return getEvent();
+}
 OBJ primFlipWindowBuffer(int nargs, OBJ args[]) {
     repaint();
     return nilObj;
 }
 
+// MARK: Dummy regular primitives
 OBJ primCloseWindow(int nargs, OBJ args[]) { return nilObj; }
 OBJ primSetFullScreen(int nargs, OBJ args[]) { return nilObj; }
 OBJ primSetWindowTitle(int nargs, OBJ args[]) { return nilObj; }
@@ -443,6 +509,9 @@ OBJ primSetCursor(int nargs, OBJ args[]) { return nilObj; }
 
 PrimEntry graphicsPrimList[] = {
     {"-----", NULL, "Graphics: Skia"},
+    {"transformCanvas", primTranformCanvas, "Transform the canvas. Arguments: [scale translateX translateY]"},
+    {"setCanvasTransformationMatrix", primSetCanvasTranformMatrix, "Transform the canvas. Arguments: [scale translateX translateY]"},
+    {"canvasTransformation", primCanvasTransformation, "Transform the canvas. Result: [scale, translateX, translateY]"},
     {"drawSkiaImage", primSkiaDraw, "Draw the test image using Skia"},
     {"drawRectLTWH", primDrawRect, "Draw a rectangle. Arguments:[left top width height bgColor cornerRadius borderWidth borderColor shadowBlur shadowColor shadowOffsetX shadowOffsetY]"},
 

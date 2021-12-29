@@ -198,7 +198,7 @@ method draw VBox bounds {
     } ( highlighted == true){
         alpha = (alpha backgroundColor)
         shadowColor = (gray 100 alpha)
-        shadowBlur = 20
+        shadowBlur = 4
         shadowX = 0
         shadowY = 0
     } 
@@ -278,17 +278,28 @@ method draw VHandController bounds {
     drawRect (bounds morph) color   
 }
 
-method processEvent VHandController event {
-    setPosition this (at event 'x') (at event 'y')
-    type = (at event 'type')
+method processMouseEvent VHandController type x y button {
+    setPosition this x y
     if (type == 'mouseMove') {
         processMouseMove this
+    } (and (button == 0) (type == 'mouseDown')){
+         processMouseDown this
+    } (and (button == 0) (type == 'mouseUp')){
+         processMouseUp this
     } (type == 'mouseDown'){
-        processMouseDown this
-    } (type == 'mouseUp'){
-        processMouseUp this
+         processRightMouseDown this
+    } (type == 'mouseUp') {
+         processRightMouseUp this
     }
 }
+method processScroll VHandController xOffset yOffset {
+    zoomFactor = 1.1;
+    if (yOffset < 0) {
+        zoomFactor = (1 / zoomFactor)
+    }
+    scaleAroundPoint world zoomFactor mouseX mouseY
+}
+
 method processMouseDown VHandController {
     dragCandidate = nil
     if (notEmpty morphsUnderMouse){
@@ -314,6 +325,14 @@ method processMouseMove VHandController {
    trackMouseMove this true
 
 }
+method processRightMouseDown VHandController { noop }
+method processRightMouseUp VHandController { 
+    //resetTransform world
+    lastMorph = (last (children (morph world)))
+    setLeft (bounds lastMorph ) 512
+    setTop (bounds lastMorph ) 512
+
+ }
 
 method trackMouseMove VHandController useOnlyTopMostMorph {
     rootMorph = (morph world)
@@ -342,9 +361,9 @@ method trackMouseMove VHandController useOnlyTopMostMorph {
 // #endregion
 
 // #region VWorld
-defineClass VWorld hand morph schedules
+defineClass VWorld hand morph schedules scale translationX translationY
 to newVWorld {
-    world = (new 'VWorld' nil nil (list))
+    world = (new 'VWorld' nil nil (list) 1.0 0.0 0.0)
     hand = (newVHandController)
     setWorld hand world
     setField world 'hand' hand
@@ -353,7 +372,90 @@ to newVWorld {
 
     return world
 }
+method updateScaleAndTranslation VWorld {
+    transformation = (canvasTransformation)
+    scale = (at transformation 1)
+    translationX = (at transformation 2)
+    translationY = (at transformation 3)
+}
+method resetTransform VWorld {
+    contentScale = 1.0
+    setCanvasTransformationMatrix contentScale 0 0 
+    updateScaleAndTranslation this
+    setNeedsDisplay morph
 
+    return
+
+    // transformation = (canvasTransformation)
+    // inspect transformation
+
+    // newScale = (2.0 / (at transformation 1))
+    // tx = (at transformation 2) 
+    // ty = (at transformation 3)
+
+    // transformCanvas newScale 0 0 //(- tx) (- ty) 
+
+    // transformation = (canvasTransformation)
+    // newScale = (2.0 / (at transformation 1))
+    // tx = ((at transformation 2) / 2.0)
+    // ty = ((at transformation 3) / 2.0)
+
+    // transformCanvas 1.0 (- tx) (- ty) 
+
+    // (setNeedsDisplay (morph world))
+}
+method scaleAroundPoint VWorld scaleFactor centerX centerY {
+    // scaleFactor = 0.75 // 0.909091
+    // centerX = 100 //300
+    // centerY = 0 //250
+
+
+    // setCanvasTransformationMatrix scaleFactor centerX centerY
+    // //transformCanvas 1.0 centerX centerY 
+    // updateScaleAndTranslation this
+    // setNeedsDisplay morph
+    // return
+
+    // updateScaleAndTranslation this
+    s0 = scale
+    tx0 = translationX
+    ty0 = translationY
+
+    newS = (scaleFactor * s0)
+    newTx = (((centerX * s0) * (1 - scaleFactor)) + tx0)
+    newTy = (((centerY * s0) * (1 - scaleFactor)) + ty0)
+    trace 'newScale' newS 'newT:' newTx newTy
+
+    setCanvasTransformationMatrix newS newTx newTy
+    updateScaleAndTranslation this
+    setNeedsDisplay morph
+
+    return
+    //scaleFactor 0.909091 center: 310 312 
+    // Input: scale:(1.000000) trans:(310.000000, 312.000000) 
+    // Before:: scale:(2.000000, 2.000000) trans:(0.000000, 0.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+    // End Matrix:: scale:(2.000000, 2.000000) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+
+    // Input: scale:(0.909091) trans:(0.000000, 0.000000) 
+    // Before:: scale:(2.000000, 2.000000) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+    // End Matrix:: scale:(1.818182, 1.818182) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+
+    // Input: scale:(1.000000) trans:(-310.000000, -312.000000) 
+    // Before:: scale:(1.818182, 1.818182) trans:(620.000000, 624.000000) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+    // End Matrix:: scale:(1.818182, 1.818182) trans:(56.363647, 56.727234) skew:(0.000000, 0.000000) pers:(0.000000, 0.000000, 1.000000)
+    trace 'scaleFactor' scaleFactor 'center:' centerX centerY
+
+    transformCanvas 1.0  centerX centerY
+    transformCanvas scaleFactor  0 0
+    transformCanvas 1.0  (- centerX) (- centerY)
+
+    // transX = 10 //(xOffset * 2.0)
+    // transY = (yOffset * 2.0)
+    // transformCanvas 1.0 transX transY
+
+    updateScaleAndTranslation this
+    setNeedsDisplay morph
+}
 
 method hand VWorld {return hand}
 method morph VWorld {return morph}
@@ -361,6 +463,7 @@ method setMorph VWorld aMorph { morph = aMorph }
 method openWindow VWorld {
     openWindow
     setup this
+    updateScaleAndTranslation this
 }
 
 method setup VWorld {
@@ -376,9 +479,30 @@ method processEvents VWorld {
     evt = (nextEvent)
     while (notNil evt) {
         // log 'Event' (toString evt)
-        type = (at evt 'type')
+        type = (at evt 'type')   
+        x = (at evt 'x')    
+        y = (at evt 'y')
+        button = (at evt 'button')
         if (or (type == 'mouseMove') (type == 'mouseDown') (type == 'mouseUp')) {
-            processEvent hand evt
+            contentScale = 2.0
+            contentX = (x * contentScale)
+            contentY = (y * contentScale)
+
+            // convertedX = (contentX / scale)
+            // convertedY = (contentY / scale)
+
+            // convertedX = (convertedX - (translationX / scale))
+            // convertedY = (convertedY - (translationY / scale))
+
+            convertedX = ((contentX - translationX) / scale)
+            convertedY = ((contentY - translationY) / scale)
+            trace 'mouse:' x y ' scale:' scale ' trans:' translationX translationY  ' ->' convertedX convertedY
+            processMouseEvent hand type convertedX convertedY button
+
+        }( 'mousewheel' == type ){
+            xOffset = ((at evt 'x') / 100.0)
+            yOffset = ((at evt 'y') / 100.0)
+           processScroll hand xOffset yOffset
         } ('quit' == type) {
             log 'Exiting'
             exit
