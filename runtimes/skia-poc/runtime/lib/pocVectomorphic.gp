@@ -129,9 +129,9 @@ method collectChildrenAt VMorph x y targetList {
         collectChildrenAt m x y targetList
     }
     // //TODO: remove this hack or change it into handler interface like 'skipHitTest'
-    if ( (className (classOf handler)) == 'VWorld' )  {
-        return targetList
-    }
+    // if ( (className (classOf handler)) == 'VWorld' )  {
+    //     return targetList
+    // }
     if (containsPoint bounds x y) {
         (add targetList this)
     }
@@ -319,8 +319,21 @@ method processMouseUp VHandController {
 }
 method processMouseMove VHandController {
     if (notNil dragCandidate){
-        (setLeft dragCandidate (mouseX - dragCandidateXOffset))
-        (setTop dragCandidate (mouseY - dragCandidateYOffset))
+        b = (bounds dragCandidate)
+        offsetX =  ((mouseX - dragCandidateXOffset) - (left b))
+        offsetY =   ((mouseY - dragCandidateYOffset) - (top b))
+        //translateBy b offsetX offsetY
+        newBounds = (translatedBy b offsetX offsetY)
+
+        if ( (className (classOf (handler dragCandidate))) == 'VWorld' )  {
+            translateBy (handler dragCandidate) offsetX offsetY
+        } else {
+            setBounds dragCandidate newBounds
+        }
+
+        setNeedsDisplay dragCandidate
+        // (setLeft dragCandidate (mouseX - dragCandidateXOffset))
+        // (setTop dragCandidate (mouseY - dragCandidateYOffset))
     }
    trackMouseMove this true
 
@@ -377,10 +390,22 @@ method updateScaleAndTranslation VWorld {
     scale = (at transformation 1)
     translationX = (at transformation 2)
     translationY = (at transformation 3)
+
+    // bounds = (bounds morph)
+    // newBounds = (scaledBy bounds scale)
+    // translateBy newBounds (- translationX) (- translationY)
+    // setBounds morph newBounds
+    // trace 'scale' scale (toString (bounds morph))
 }
 method resetTransform VWorld {
     contentScale = 2.0 // TODO: contentScale should not be visible for GP code
     setCanvasTransformationMatrix contentScale 0 0 
+    updateScaleAndTranslation this
+    setNeedsDisplay morph
+}
+
+method translateBy VWorld  tX tY {
+    transformCanvas 1.0 tX tY
     updateScaleAndTranslation this
     setNeedsDisplay morph
 }
@@ -414,7 +439,9 @@ method setup VWorld {
     (setMorph this rootMorph)
 }
 // Morph Handler 'interface'
-method draw VWorld bounds {}
+method draw VWorld bounds {
+    drawRect (bounds morph) (color 255 255 0 32)
+}
 method acceptsEvents VWorld { return false }
 
 method processEvents VWorld {
